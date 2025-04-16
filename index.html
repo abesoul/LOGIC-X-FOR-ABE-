@@ -58,5 +58,19 @@
   </div>
 
   <script src="script.js"></script>
+  <!-- Floating FX Panel -->
+<div id="fx-panel" class="glass hidden">
+  <h3>FX Rack</h3>
+  <label>Reverb</label>
+  <input id="reverb-slider" type="range" min="0" max="1" step="0.01" value="0.2" />
+
+  <label>Delay</label>
+  <input id="delay-slider" type="range" min="0" max="1" step="0.01" value="0.1" />
+
+  <label>EQ (Treble)</label>
+  <input id="eq-slider" type="range" min="1000" max="10000" value="5000" />
+
+  <button id="close-fx-btn">Close</button>
+</div>
 </body>
 </html>
