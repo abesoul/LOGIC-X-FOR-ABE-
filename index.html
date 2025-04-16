@@ -1,29 +1,40 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple DAW</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeonDAW</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div id="main-container">
-        <h1>Simple DAW</h1>
+  <div id="app" class="glass-panel">
 
-        <!-- Add Track Button -->
-        <button id="add-track-btn">Add Track</button>
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <h1 class="logo">🎶 NeonDAW</h1>
+      <div class="transport">
+        <button id="play">▶</button>
+        <button id="stop">■</button>
+        <button id="record">●</button>
+      </div>
+    </header>
 
-        <div id="track-container">
-            <!-- Tracks will be dynamically added here -->
-        </div>
+    <!-- Track Timeline Editor -->
+    <main class="main-editor">
+      <div id="timeline" class="timeline">
+        <!-- Tracks will be injected here -->
+      </div>
+      <button id="addTrack" class="glow-btn">+ Add Track</button>
+    </main>
 
-        <div id="effects-container">
-            <h2>Effects</h2>
-            <button id="reverb-btn">Reverb</button>
-            <button id="delay-btn">Delay</button>
-        </div>
-    </div>
+    <!-- Mixer Panel -->
+    <section id="mixer" class="mixer">
+      <!-- Track channels will appear here -->
+    </section>
 
-    <script src="js/script.js"></script>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
