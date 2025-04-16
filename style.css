@@ -1,72 +1,104 @@
-/* style.css */
+/* Merged style.css */
 
 body {
   margin: 0;
-  font-family: 'Orbitron', sans-serif;
-  background: linear-gradient(135deg, #000010, #02021d);
+  font-family: 'Orbitron', 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #000010, #1c1c2b);
   color: #fff;
   overflow: hidden;
 }
 
-.glass-panel {
-  backdrop-filter: blur(12px);
+/* Shared Glass Effects */
+.glass, .glass-panel {
+  backdrop-filter: blur(15px);
   background: rgba(10, 10, 20, 0.4);
   border-radius: 20px;
-  margin: 1rem;
   padding: 1rem;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.2);
+  margin: 1rem;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.top-bar {
+/* Navbar + Top Bar */
+header#navbar, .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding: 10px 30px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 0 20px #00f0ff;
 }
 
-.logo {
+/* Title / Logo */
+header h1, .logo {
+  font-weight: 700;
   font-size: 1.5rem;
-  color: cyan;
+  color: #00f0ff;
   text-shadow: 0 0 5px cyan;
 }
 
-.transport button {
+/* Transport Buttons (Merged Styles) */
+.transport-controls button, .transport button {
   margin: 0 0.3rem;
   font-size: 1.2rem;
   padding: 0.3rem 0.6rem;
-  background: none;
+  background: #111;
   border: 2px solid cyan;
-  border-radius: 5px;
-  color: cyan;
+  border-radius: 8px;
+  color: #0ff;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.3s ease;
 }
 
-.transport button:hover {
+.transport-controls button:hover, .transport button:hover {
   background: cyan;
   color: black;
   box-shadow: 0 0 10px cyan;
 }
 
-.timeline {
-  min-height: 200px;
-  background: rgba(20, 20, 40, 0.6);
-  border: 2px dashed cyan;
-  border-radius: 15px;
-  margin: 1rem 0;
-  padding: 1rem;
-  overflow-x: scroll;
+/* Layout */
+#main-ui {
   display: flex;
-  gap: 1rem;
+  height: calc(100vh - 60px);
 }
 
-.mixer {
+/* Mixer Panel */
+#mixer-panel, .mixer {
+  width: 25%;
   display: flex;
+  flex-direction: column;
   gap: 1rem;
-  padding: 1rem;
   overflow-x: auto;
 }
 
+/* Timeline Panel */
+#timeline-panel {
+  width: 75%;
+  display: flex;
+  flex-direction: column;
+}
+
+#timeline-dropzone {
+  height: 100px;
+  border: 2px dashed #00f0ff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+/* Track Lists */
+#track-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Individual Track Style */
 .track {
   min-width: 250px;
   background: rgba(0, 0, 0, 0.6);
@@ -79,20 +111,38 @@ body {
   width: 100%;
 }
 
-.glow-btn {
+/* Timeline Tracks */
+#timeline-tracks, #timeline {
+  min-height: 200px;
+  background: rgba(20, 20, 40, 0.6);
+  border: 2px dashed cyan;
+  border-radius: 15px;
+  margin: 1rem 0;
+  padding: 1rem;
+  overflow-x: scroll;
+  display: flex;
+  gap: 1rem;
+}
+
+/* Add Track Buttons */
+button#add-track-btn,
+.glow-btn,
+#addTrack {
   margin-top: 1rem;
   padding: 0.6rem 1.2rem;
   font-size: 1rem;
   background: black;
   color: cyan;
   border: 2px solid cyan;
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 0 10px cyan;
   cursor: pointer;
   transition: 0.3s;
 }
 
-.glow-btn:hover {
+button#add-track-btn:hover,
+.glow-btn:hover,
+#addTrack:hover {
   background: cyan;
   color: black;
   transform: scale(1.05);
