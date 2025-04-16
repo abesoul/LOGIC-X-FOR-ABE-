@@ -10,28 +10,50 @@
 <body>
   <div id="app" class="glass-panel">
 
-    <!-- Top Bar -->
-    <header class="top-bar">
+    <!-- Combined Header -->
+    <header id="navbar" class="top-bar">
       <h1 class="logo">🎶 NeonDAW</h1>
       <div class="transport">
+        <button id="play-btn">▶️</button>
+        <button id="stop-btn">⏹</button>
+        <button id="record-btn">🔴</button>
+        <!-- Additional transport buttons (duplicated for compatibility) -->
         <button id="play">▶</button>
         <button id="stop">■</button>
         <button id="record">●</button>
       </div>
     </header>
 
-    <!-- Track Timeline Editor -->
-    <main class="main-editor">
-      <div id="timeline" class="timeline">
-        <!-- Tracks will be injected here -->
-      </div>
-      <button id="addTrack" class="glow-btn">+ Add Track</button>
-    </main>
+    <!-- Main UI -->
+    <main id="main-ui" class="main-editor">
+      
+      <!-- Mixer Panel (Left Side) -->
+      <section id="mixer-panel" class="glass mixer">
+        <h2>Mixer</h2>
+        <div id="track-list">
+          <!-- Track strips dynamically added here -->
+        </div>
+        <div id="mixer">
+          <!-- Track channels will appear here -->
+        </div>
+        <button id="add-track-btn">➕ Add Track</button>
+      </section>
 
-    <!-- Mixer Panel -->
-    <section id="mixer" class="mixer">
-      <!-- Track channels will appear here -->
-    </section>
+      <!-- Timeline Area (Right Side) -->
+      <section id="timeline-panel" class="glass timeline">
+        <h2>Timeline</h2>
+        <div id="timeline-dropzone">
+          <p>🗂️ Drag & Drop Audio Files Here</p>
+        </div>
+        <div id="timeline-tracks">
+          <!-- Timeline rows will be added here -->
+        </div>
+        <div id="timeline">
+          <!-- Tracks will be injected here -->
+        </div>
+        <button id="addTrack" class="glow-btn">+ Add Track</button>
+      </section>
+    </main>
 
   </div>
 
