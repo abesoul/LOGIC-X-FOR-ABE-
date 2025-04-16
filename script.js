@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const mixer = document.getElementById('mixer');
   const dropzone = document.getElementById('timeline-dropzone');
 
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   let trackCount = 0;
 
   addTrackBtn.addEventListener('click', () => {
@@ -17,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     timelineBlock.innerHTML = `
       <h3>Track ${trackCount}</h3>
       <input type="file" accept="audio/*" data-id="${trackId}" class="file-upload"/>
-      <canvas class="waveform" width="240" height="60"></canvas>
+      <canvas class="waveform" width="240" height="60" data-id="${trackId}"></canvas>
     `;
     timelineTracks.appendChild(timelineBlock);
 
@@ -47,16 +48,48 @@ document.addEventListener('DOMContentLoaded', () => {
       trackList.appendChild(strip);
     }
 
-    // Timeline Label Row (if present)
-    if (timelineTracks && document.getElementById('timeline-tracks')) {
-      const timelineRow = document.createElement('div');
-      timelineRow.className = 'timeline-row';
-      timelineRow.innerHTML = `<p>Track ${trackCount}</p>`;
-      document.getElementById('timeline-tracks').appendChild(timelineRow);
-    }
+    setupFileHandler();
   });
 
-  // Drag & Drop to timeline
+  function setupFileHandler() {
+    const fileInputs = document.querySelectorAll('.file-upload');
+    fileInputs.forEach(input => {
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        const canvas = document.querySelector(`canvas[data-id="${e.target.dataset.id}"]`);
+        drawWaveform(canvas, audioBuffer);
+        canvas.onclick = () => playAudio(audioBuffer);
+      };
+    });
+  }
+
+  function drawWaveform(canvas, audioBuffer) {
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const data = audioBuffer.getChannelData(0);
+    const step = Math.ceil(data.length / width);
+    const amp = height / 2;
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#0ff';
+    for (let i = 0; i < width; i++) {
+      const min = Math.min(...data.slice(i * step, (i + 1) * step));
+      const max = Math.max(...data.slice(i * step, (i + 1) * step));
+      ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
+    }
+  }
+
+  function playAudio(audioBuffer) {
+    const source = audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioContext.destination);
+    source.start();
+  }
+
+  // Drag & Drop Support
   if (dropzone) {
     dropzone.addEventListener('dragover', (e) => {
       e.preventDefault();
@@ -67,120 +100,25 @@ document.addEventListener('DOMContentLoaded', () => {
       dropzone.style.borderColor = '#00f0ff';
     });
 
-    dropzone.addEventListener('drop', (e) => {
+    dropzone.addEventListener('drop', async (e) => {
       e.preventDefault();
       const file = e.dataTransfer.files[0];
+      if (!file) return;
       alert(`🎵 Imported file: ${file.name}`);
+
+      // Auto add a new track and load it
+      addTrackBtn.click();
+
+      // Wait for track DOM to render then trigger file input
+      setTimeout(async () => {
+        const newInput = document.querySelectorAll('.file-upload')[trackCount - 1];
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        newInput.files = dt.files;
+        newInput.dispatchEvent(new Event('change'));
+      }, 100);
+
       dropzone.style.borderColor = '#00f0ff';
-      // TODO: Handle waveform generation and playback
     });
   }
-});
-
-// FX Rack & Audio Context
-let audioCtx;
-let currentSource;
-let reverbNode, delayNode, eqNode;
-let fxPanel = document.getElementById('fx-panel');
-
-document.addEventListener('DOMContentLoaded', () => {
-  const addTrackBtn = document.getElementById('add-track-btn');
-  const trackList = document.getElementById('track-list');
-  const timelineTracks = document.getElementById('timeline-tracks');
-  const dropzone = document.getElementById('timeline-dropzone');
-  const closeFX = document.getElementById('close-fx-btn');
-
-  // Handle Track Creation
-  addTrackBtn.addEventListener('click', () => {
-    const track = document.createElement('div');
-    track.className = 'track-strip';
-    track.innerHTML = `
-      <h4>Track ${trackList.children.length + 1}</h4>
-      <input type="range" min="0" max="100" value="50" />
-      <button class="add-effect-btn">🎛 FX</button>
-    `;
-    trackList.appendChild(track);
-
-    const timelineRow = document.createElement('div');
-    timelineRow.className = 'timeline-row';
-    timelineRow.innerHTML = `<p>Track ${trackList.children.length}</p>`;
-    timelineTracks.appendChild(timelineRow);
-
-    // FX button logic
-    track.querySelector('.add-effect-btn').addEventListener('click', () => {
-      fxPanel.classList.remove('hidden');
-    });
-  });
-
-  closeFX.addEventListener('click', () => {
-    fxPanel.classList.add('hidden');
-  });
-
-  // Handle Drag & Drop
-  dropzone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropzone.style.borderColor = '#0ff';
-  });
-
-  dropzone.addEventListener('dragleave', () => {
-    dropzone.style.borderColor = '#00f0ff';
-  });
-
-  dropzone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    dropzone.style.borderColor = '#00f0ff';
-    loadAndPlayAudio(file);
-  });
-
-  // Load + Process Audio
-  function loadAndPlayAudio(file) {
-    const reader = new FileReader();
-    reader.onload = function () {
-      const arrayBuffer = reader.result;
-
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-      audioCtx.decodeAudioData(arrayBuffer, (audioBuffer) => {
-        if (currentSource) currentSource.disconnect();
-
-        currentSource = audioCtx.createBufferSource();
-        currentSource.buffer = audioBuffer;
-
-        // FX Nodes
-        reverbNode = audioCtx.createGain();
-        delayNode = audioCtx.createDelay();
-        eqNode = audioCtx.createBiquadFilter();
-        eqNode.type = 'highshelf';
-
-        // Initial settings
-        reverbNode.gain.value = parseFloat(document.getElementById('reverb-slider').value);
-        delayNode.delayTime.value = parseFloat(document.getElementById('delay-slider').value);
-        eqNode.frequency.value = parseFloat(document.getElementById('eq-slider').value);
-
-        // Connect FX chain
-        currentSource
-          .connect(reverbNode)
-          .connect(delayNode)
-          .connect(eqNode)
-          .connect(audioCtx.destination);
-
-        currentSource.start();
-      });
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  // FX Control Listeners
-  document.getElementById('reverb-slider').addEventListener('input', e => {
-    if (reverbNode) reverbNode.gain.value = parseFloat(e.target.value);
-  });
-
-  document.getElementById('delay-slider').addEventListener('input', e => {
-    if (delayNode) delayNode.delayTime.value = parseFloat(e.target.value);
-  });
-
-  document.getElementById('eq-slider').addEventListener('input', e => {
-    if (eqNode) eqNode.frequency.value = parseFloat(e.target.value);
-  });
 });
