@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,95 +7,23 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="app" class="glass-panel">
+  <header>
+    <h1>🎶 NeonDAW</h1>
+  </header>
 
-    <!-- Combined Header -->
-    <header id="navbar" class="top-bar">
-      <h1 class="logo">🎶 NeonDAW</h1>
-      <div class="transport">
-        <button id="play-btn">▶️</button>
-        <button id="stop-btn">⏹</button>
-        <button id="record-btn">🔴</button>
-        <!-- Additional transport buttons (duplicated for compatibility) -->
-        <button id="play">▶</button>
-        <button id="stop">■</button>
-        <button id="record">●</button>
-      </div>
-    </header>
+  <main id="main-container">
+    <div class="toolbar">
+      <button id="add-track-btn">➕ Add Track</button>
+    </div>
 
-    <!-- Main UI -->
-    <main id="main-ui" class="main-editor">
-      
-      <!-- Mixer Panel (Left Side) -->
-      <section id="mixer-panel" class="glass mixer">
-        <h2>Mixer</h2>
-        <div id="track-list">
-          <!-- Track strips dynamically added here -->
-        </div>
-        <div id="mixer">
-          <!-- Track channels will appear here -->
-        </div>
-        <button id="add-track-btn">➕ Add Track</button>
-      </section>
+    <section id="track-container"></section>
 
-      <!-- Timeline Area (Right Side) -->
-      <section id="timeline-panel" class="glass timeline">
-        <h2>Timeline</h2>
-        <!-- Track Timeline Area -->
-<div id="timeline-area">
-  <div id="timeline-tracks"></div>
-  <div id="timeline-dropzone" class="dropzone">
-    <p>Drop your tracks here</p>
-  </div>
-</div>
-
-<!-- Track FX Plugin Controls (floating per track) -->
-<div id="plugin-panel" class="glass hidden">
-  <h3>Track FX</h3>
-  <label>Reverb</label>
-  <input id="reverb-slider" type="range" min="0" max="1" step="0.01" value="0.2" />
-  
-  <label>Delay</label>
-  <input id="delay-slider" type="range" min="0" max="1" step="0.01" value="0.1" />
-  
-  <label>EQ (Treble)</label>
-  <input id="eq-slider" type="range" min="1000" max="10000" value="5000" />
-  
-  <label>Compression</label>
-  <input id="compressor-slider" type="range" min="0" max="1" step="0.01" value="0.5" />
-  
-  <label>Distortion</label>
-  <input id="distortion-slider" type="range" min="0" max="1" step="0.01" value="0" />
-
-  <button id="close-plugin-btn">Close</button>
-</div>
-
-        <div id="timeline-tracks">
-          <!-- Timeline rows will be added here -->
-        </div>
-        <div id="timeline">
-          <!-- Tracks will be injected here -->
-        </div>
-        <button id="addTrack" class="glow-btn">+ Add Track</button>
-      </section>
-    </main>
-
-  </div>
+    <div id="plugin-panel" class="glass-panel hidden">
+      <h2>FX Rack</h2>
+      <div id="plugin-list"></div>
+    </div>
+  </main>
 
   <script src="script.js"></script>
-  <!-- Floating FX Panel -->
-<div id="fx-panel" class="glass hidden">
-  <h3>FX Rack</h3>
-  <label>Reverb</label>
-  <input id="reverb-slider" type="range" min="0" max="1" step="0.01" value="0.2" />
-
-  <label>Delay</label>
-  <input id="delay-slider" type="range" min="0" max="1" step="0.01" value="0.1" />
-
-  <label>EQ (Treble)</label>
-  <input id="eq-slider" type="range" min="1000" max="10000" value="5000" />
-
-  <button id="close-fx-btn">Close</button>
-</div>
 </body>
 </html>
