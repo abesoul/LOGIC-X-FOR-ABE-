@@ -42,9 +42,35 @@
       <!-- Timeline Area (Right Side) -->
       <section id="timeline-panel" class="glass timeline">
         <h2>Timeline</h2>
-        <div id="timeline-dropzone">
-          <p>🗂️ Drag & Drop Audio Files Here</p>
-        </div>
+        <!-- Track Timeline Area -->
+<div id="timeline-area">
+  <div id="timeline-tracks"></div>
+  <div id="timeline-dropzone" class="dropzone">
+    <p>Drop your tracks here</p>
+  </div>
+</div>
+
+<!-- Track FX Plugin Controls (floating per track) -->
+<div id="plugin-panel" class="glass hidden">
+  <h3>Track FX</h3>
+  <label>Reverb</label>
+  <input id="reverb-slider" type="range" min="0" max="1" step="0.01" value="0.2" />
+  
+  <label>Delay</label>
+  <input id="delay-slider" type="range" min="0" max="1" step="0.01" value="0.1" />
+  
+  <label>EQ (Treble)</label>
+  <input id="eq-slider" type="range" min="1000" max="10000" value="5000" />
+  
+  <label>Compression</label>
+  <input id="compressor-slider" type="range" min="0" max="1" step="0.01" value="0.5" />
+  
+  <label>Distortion</label>
+  <input id="distortion-slider" type="range" min="0" max="1" step="0.01" value="0" />
+
+  <button id="close-plugin-btn">Close</button>
+</div>
+
         <div id="timeline-tracks">
           <!-- Timeline rows will be added here -->
         </div>
