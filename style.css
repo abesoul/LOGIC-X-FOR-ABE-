@@ -111,6 +111,75 @@ header h1, .logo {
   width: 100%;
 }
 
+/* Timeline Area */
+#timeline-area {
+  margin-top: 20px;
+  height: 300px;
+  border: 2px dashed #00f0ff;
+  position: relative;
+}
+
+#timeline-tracks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#timeline-dropzone {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 3px dashed #00f0ff;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+#plugin-panel {
+  position: fixed;
+  top: 80px;
+  right: 40px;
+  width: 250px;
+  padding: 20px;
+  z-index: 10;
+  box-shadow: 0 0 25px #0ff;
+  transition: all 0.3s ease;
+}
+
+#plugin-panel.hidden {
+  display: none;
+}
+
+#plugin-panel h3 {
+  color: #00f0ff;
+  margin-bottom: 10px;
+}
+
+#plugin-panel label {
+  display: block;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+#plugin-panel input[type="range"] {
+  width: 100%;
+}
+
+#close-plugin-btn {
+  margin-top: 15px;
+  padding: 8px;
+  width: 100%;
+  background: #00f0ff;
+  border: none;
+  color: black;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+
 /* Timeline Tracks */
 #timeline-tracks, #timeline {
   min-height: 200px;
