@@ -7,22 +7,38 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>🎶 NeonDAW</h1>
-  </header>
+  <div id="app" class="glass-panel">
 
-  <main id="main-container">
-    <div class="toolbar">
-      <button id="add-track-btn">➕ Add Track</button>
-    </div>
+    <!-- 🎛 Top Bar -->
+    <header class="top-bar">
+      <h1 class="logo">🎶 NeonDAW</h1>
+      <div class="transport">
+        <button id="play">▶</button>
+        <button id="stop">■</button>
+        <button id="record">●</button>
+      </div>
+    </header>
 
-    <section id="track-container"></section>
+    <!-- 🎞 Timeline Editor -->
+    <main class="main-editor">
+      <div id="timeline" class="timeline">
+        <!-- Tracks with visual waveforms will be injected here -->
+      </div>
+      <button id="addTrack" class="glow-btn">+ Add Track</button>
+    </main>
 
+    <!-- 🎚 Mixer Panel -->
+    <section id="mixer" class="mixer">
+      <!-- Track mixer controls will appear here -->
+    </section>
+
+    <!-- 🧩 FX Plugin Panel -->
     <div id="plugin-panel" class="glass-panel hidden">
       <h2>FX Rack</h2>
       <div id="plugin-list"></div>
     </div>
-  </main>
+    
+  </div>
 
   <script src="script.js"></script>
 </body>
