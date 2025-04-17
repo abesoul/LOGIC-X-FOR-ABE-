@@ -1,45 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NeonDAW</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple DAW</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div id="app" class="glass-panel">
+    <div id="main-container">
+        <h1>Simple DAW</h1>
+        <div id="track-container">
+            <!-- Track 1 -->
+            <div class="track">
+                <h2>Track 1</h2>
+                <input type="file" id="track1-upload" accept="audio/*">
+                <div class="mixer">
+                    <label>Volume:</label><input type="range" id="track1-volume" min="0" max="100" value="50">
+                    <label>Pan:</label><input type="range" id="track1-pan" min="-50" max="50" value="0">
+                </div>
+            </div>
+            <!-- More tracks can be added dynamically -->
+        </div>
 
-    <!-- 🎛 Top Bar -->
-    <header class="top-bar">
-      <h1 class="logo">🎶 NeonDAW</h1>
-      <div class="transport">
-        <button id="play">▶</button>
-        <button id="stop">■</button>
-        <button id="record">●</button>
-      </div>
-    </header>
-
-    <!-- 🎞 Timeline Editor -->
-    <main class="main-editor">
-      <div id="timeline" class="timeline">
-        <!-- Tracks with visual waveforms will be injected here -->
-      </div>
-      <button id="addTrack" class="glow-btn">+ Add Track</button>
-    </main>
-
-    <!-- 🎚 Mixer Panel -->
-    <section id="mixer" class="mixer">
-      <!-- Track mixer controls will appear here -->
-    </section>
-
-    <!-- 🧩 FX Plugin Panel -->
-    <div id="plugin-panel" class="glass-panel hidden">
-      <h2>FX Rack</h2>
-      <div id="plugin-list"></div>
+        <div id="effects-container">
+            <h2>Effects</h2>
+            <button id="reverb-btn">Reverb</button>
+            <button id="delay-btn">Delay</button>
+        </div>
     </div>
-    
-  </div>
 
-  <script src="script.js"></script>
+    <script src="js/script.js"></script>
 </body>
 </html>
