@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const plugins = {
     reverb: () => {
       const convolver = audioContext.createConvolver();
-      // (Could load IR files here)
       return { node: convolver, name: "Reverb" };
     },
     delay: () => {
@@ -52,13 +51,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const fxButton = document.createElement('button');
     fxButton.textContent = '🧩 Plugins';
 
+    const volumeSlider = document.createElement('input');
+    volumeSlider.type = 'range';
+    volumeSlider.min = 0;
+    volumeSlider.max = 100;
+    volumeSlider.value = 100;
+
+    const panSlider = document.createElement('input');
+    panSlider.type = 'range';
+    panSlider.min = -100;
+    panSlider.max = 100;
+    panSlider.value = 0;
+
     const controls = document.createElement('div');
     controls.className = 'track-controls';
     controls.appendChild(playButton);
     controls.appendChild(fxButton);
+    controls.appendChild(volumeSlider);
+    controls.appendChild(panSlider);
+
     trackEl.appendChild(controls);
 
     const trackGain = audioContext.createGain();
+    const trackPanner = audioContext.createStereoPanner();
+    trackGain.connect(trackPanner).connect(audioContext.destination);
     const pluginChain = [];
 
     let audioBuffer, source;
@@ -78,13 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
         source = audioContext.createBufferSource();
         source.buffer = audioBuffer;
 
-        // Apply plugin chain
+        // Connect plugin chain
         let chainStart = source;
         pluginChain.forEach((plugin) => {
           chainStart.connect(plugin.node);
           chainStart = plugin.node;
         });
-        chainStart.connect(trackGain).connect(audioContext.destination);
+
+        chainStart.connect(trackGain);
         source.start();
       }
     });
@@ -93,6 +110,14 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedTrack = pluginChain;
       renderFXPanel();
       pluginPanel.classList.remove('hidden');
+    });
+
+    volumeSlider.addEventListener('input', (e) => {
+      trackGain.gain.value = e.target.value / 100;
+    });
+
+    panSlider.addEventListener('input', (e) => {
+      trackPanner.pan.value = e.target.value / 100;
     });
 
     trackContainer.appendChild(trackEl);
