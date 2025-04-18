@@ -1,18 +1,35 @@
-/* Global Styles */
+/* Global Reset and Base Styles */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', 'Arial', sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
+  margin: 0;
+  padding: 0;
   background: linear-gradient(135deg, #0f0f1f, #1c1c2b);
   color: white;
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow-x: hidden;
+}
+
+/* App Container */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#transport,
+#timeline,
+#mixer,
+#tracks {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Glassmorphism Panels */
@@ -121,12 +138,12 @@ body {
   padding-top: 10px;
 }
 
-/* Hidden Utility Class */
+/* Utility */
 .hidden {
   display: none;
 }
 
-/* Neon Buttons General */
+/* Neon Buttons */
 button:hover {
   box-shadow: 0 0 15px #0ff;
   color: #0ff;
