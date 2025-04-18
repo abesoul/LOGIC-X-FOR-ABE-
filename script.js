@@ -1,74 +1,111 @@
-let zoomLevel = 1; 
+const grid = document.getElementById('timeline-grid');
+const zoomSlider = document.getElementById('zoom-slider');
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+let zoomLevel = 1;
 let subdivisionLevel = 4;
 let tempo = 120;
+let trackCounter = 0;
 let trackPatterns = [];
 let currentPattern = [];
 let previousPatterns = [];
 let nextPatterns = [];
-let trackCounter = 0;
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let tracks = [];
-let copiedBeat = null;
 let selectedBeats = [];
+let clipboard = [];
 
-const timelineGrid = document.getElementById('timeline-grid');
-let selectionBox = null;
-let startX, startY;
+let isDragging = false;
 let isSelecting = false;
+let selectionBox = null;
+let startX = 0, startY = 0;
 
-// -------- TIMELINE SELECTION BOX --------
-timelineGrid.addEventListener('mousedown', (e) => {
+// -------- ZOOM CONTROL --------
+zoomSlider.addEventListener('input', () => {
+  const scale = parseFloat(zoomSlider.value);
+  document.querySelectorAll('.beat').forEach(beat => {
+    beat.style.transform = `scaleX(${scale})`;
+    beat.style.transformOrigin = 'left';
+  });
+});
+
+// -------- SELECTION BOX --------
+grid.addEventListener('mousedown', (e) => {
+  isDragging = true;
   isSelecting = true;
   startX = e.offsetX;
   startY = e.offsetY;
 
   selectionBox = document.createElement('div');
   selectionBox.className = 'selection-box';
-  selectionBox.style.left = `${startX}px`;
-  selectionBox.style.top = `${startY}px`;
-  timelineGrid.appendChild(selectionBox);
+  Object.assign(selectionBox.style, {
+    left: `${startX}px`,
+    top: `${startY}px`,
+    width: '0px',
+    height: '100%'
+  });
+  grid.appendChild(selectionBox);
 });
 
-timelineGrid.addEventListener('mousemove', (e) => {
-  if (!isSelecting) return;
-
+grid.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
   const currX = e.offsetX;
-  const currY = e.offsetY;
-
   const rect = {
     left: Math.min(startX, currX),
-    top: Math.min(startY, currY),
-    width: Math.abs(startX - currX),
-    height: Math.abs(startY - currY)
+    width: Math.abs(currX - startX)
   };
-
   Object.assign(selectionBox.style, {
     left: `${rect.left}px`,
-    top: `${rect.top}px`,
-    width: `${rect.width}px`,
-    height: `${rect.height}px`
+    width: `${rect.width}px`
   });
+
+  const selBoxRect = selectionBox.getBoundingClientRect();
+  selectedBeats = [];
 
   document.querySelectorAll('.beat').forEach(beat => {
     const beatRect = beat.getBoundingClientRect();
-    const gridRect = timelineGrid.getBoundingClientRect();
-
-    const beatX = beatRect.left - gridRect.left;
-    const beatWidth = beatRect.width;
-
-    const isInside = beatX + beatWidth > rect.left &&
-                     beatX < rect.left + rect.width;
-
-    beat.classList.toggle('selected', isInside);
+    const isIntersecting = !(selBoxRect.right < beatRect.left || selBoxRect.left > beatRect.right);
+    if (isIntersecting) {
+      beat.classList.add('selected');
+      selectedBeats.push(beat);
+    } else {
+      beat.classList.remove('selected');
+    }
   });
 });
 
 document.addEventListener('mouseup', () => {
-  if (selectionBox) {
-    timelineGrid.removeChild(selectionBox);
-    selectionBox = null;
+  if (selectionBox && grid.contains(selectionBox)) {
+    grid.removeChild(selectionBox);
   }
+  selectionBox = null;
+  isDragging = false;
   isSelecting = false;
+});
+
+// -------- COPY / PASTE / SHIFT --------
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 'c') {
+    clipboard = [...selectedBeats];
+  }
+
+  if (e.ctrlKey && e.key === 'v' && clipboard.length) {
+    clipboard.forEach(beat => {
+      const copy = beat.cloneNode(true);
+      copy.classList.remove('selected');
+      grid.appendChild(copy);
+    });
+  }
+
+  if (e.key === 'ArrowRight') {
+    selectedBeats.forEach(beat => {
+      beat.style.marginLeft = '10px';
+    });
+  }
+
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.beat.selected').forEach(b => b.classList.remove('selected'));
+    selectedBeats = [];
+  }
 });
 
 // -------- TRACK CREATION --------
@@ -76,7 +113,6 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
   const index = trackCounter++;
   const track = createTrack(index);
   tracks.push(track);
-  updateUI();
 
   const trackStrip = document.createElement("div");
   trackStrip.className = "track-strip";
@@ -117,7 +153,6 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
   `;
   document.getElementById("timeline-tracks").appendChild(timelineRow);
 
-  // Create 64 beat blocks in this track
   const beatPattern = timelineRow.querySelector('.beat-pattern');
   for (let i = 0; i < 64; i++) {
     const beat = document.createElement('div');
@@ -147,122 +182,4 @@ function createTrack(index) {
     muted: false,
     soloed: false
   };
-}
-
-// -------- BEAT VISUAL FEEDBACK --------
-function finalizeBeatVisuals(beat, type) {
-  if (type === "split") {
-    beat.style.backgroundColor = "lightblue";
-    beat.style.border = "1px dashed #00f";
-  } else if (type === "inserted") {
-    beat.style.backgroundColor = "yellow";
-    beat.style.boxShadow = "0 0 5px rgba(255, 255, 0, 0.7)";
-  } else if (type === "deleted") {
-    beat.style.backgroundColor = "red";
-    beat.style.opacity = 0.5;
-    setTimeout(() => beat.remove(), 500);
-  }
-}
-
-// -------- INSERT, DELETE, SPLIT --------
-function insertBeat(time, index) {
-  const patternRow = document.querySelector(`#timeline-row-${index} .beat-pattern`);
-  const beat = document.createElement("div");
-  beat.classList.add("beat");
-  beat.dataset.time = time;
-  beat.style.left = `${time * 100}%`;
-  beat.style.height = "100%";
-  patternRow.appendChild(beat);
-  finalizeBeatVisuals(beat, "inserted");
-  initDragAndDrop(index);
-}
-
-function splitBeat(time, index) {
-  insertBeat(time, index);
-  finalizeBeatVisuals(document.querySelector(`#timeline-row-${index} .beat-pattern .beat:last-child`), "split");
-}
-
-function deleteBeat(beat, index) {
-  finalizeBeatVisuals(beat, "deleted");
-}
-
-// -------- COPY/PASTE --------
-function enableCopyPaste(index) {
-  const patternRow = document.querySelector(`#timeline-row-${index} .beat-pattern`);
-  patternRow.addEventListener("contextmenu", (e) => {
-    if (e.target.classList.contains("beat")) {
-      copiedBeat = e.target;
-      e.preventDefault();
-    }
-  });
-
-  patternRow.addEventListener("click", (e) => {
-    if (copiedBeat && e.target.classList.contains("beat")) {
-      pasteBeat(e.target, index);
-    }
-  });
-}
-
-function pasteBeat(targetBeat, index) {
-  const time = parseFloat(targetBeat.dataset.time);
-  insertBeat(time, index);
-}
-
-// -------- SHIFT SECTION --------
-function shiftBeatSection(startIndex, endIndex, direction, index) {
-  const patternRow = document.querySelector(`#timeline-row-${index} .beat-pattern`);
-  Array.from(patternRow.children).forEach(beat => {
-    const time = parseFloat(beat.dataset.time);
-    if (time >= startIndex && time <= endIndex) {
-      const newTime = time + direction;
-      beat.dataset.time = newTime;
-      beat.style.left = `${newTime * 100}%`;
-    }
-  });
-}
-
-function enableAdvancedBeatEditing(index) {
-  enableCopyPaste(index);
-  enablePatternShifting(index);
-}
-
-function enablePatternShifting(index) {
-  const patternRow = document.querySelector(`#timeline-row-${index} .beat-pattern`);
-  patternRow.addEventListener("mousedown", e => {
-    if (e.target.classList.contains("beat")) {
-      selectedBeats = [e.target];
-    }
-  });
-  patternRow.addEventListener("mousemove", e => {
-    if (selectedBeats.length) {
-      const percent = e.offsetX / patternRow.clientWidth;
-      selectedBeats.forEach(beat => {
-        beat.style.left = `${percent * 100}%`;
-        beat.dataset.time = percent;
-      });
-    }
-  });
-  patternRow.addEventListener("mouseup", () => {
-    selectedBeats = [];
-  });
-}
-
-function initZoomControls(index) {
-  // TODO: implement zoom logic
-}
-
-function updateUI() {
-  // Optional: Update mixer, track count, etc.
-}
-
-function displaySubdivisions(index) {
-  // Optional: Add visual grid lines based on subdivision
-}
-
-function initTrackLogic(index) {
-  // TODO: Add logic for playback, effects, etc.
-}
-
-function initDragAndDrop(index) {
-  // TODO: Allow drag/drop of beats
 }
