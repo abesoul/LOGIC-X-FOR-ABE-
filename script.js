@@ -1,3 +1,5 @@
+let zoomLevel = 1; // Zoom level for timeline (1 = normal, > 1 = zoomed in)
+let subdivisionLevel = 4; // Default subdivision (e.g., 4 subdivisions per beat)
 let tempo = 120; // Default tempo (beats per minute)
 let trackPatterns = [];
 let currentPattern = [];
@@ -218,20 +220,16 @@ function initTrackLogic(index) {
   function generateSyncopatedPattern() {
     return [
       { time: 0, type: "hit" },
-      { time: 0.5, type: "rest" },
+      { time: 0.5, type: "hit" },
       { time: 1.5, type: "hit" },
-      { time: 2, type: "rest" },
-      { time: 2.5, type: "hit" },
-      { time: 3, type: "rest" }
+      { time: 2.5, type: "hit" }
     ];
   }
 
   function generatePolyrhythmPattern(top, bottom) {
     const pattern = [];
-    const patternLength = top * bottom;
-    for (let i = 0; i < patternLength; i++) {
-      const time = i / bottom;
-      pattern.push({ time, type: i % top === 0 ? "hit" : "rest" });
+    for (let i = 0; i < top; i++) {
+      pattern.push({ time: (i * (bottom / top)), type: "hit" });
     }
     return pattern;
   }
@@ -239,66 +237,71 @@ function initTrackLogic(index) {
   function generateSwingPattern() {
     return [
       { time: 0, type: "hit" },
+      { time: 0.75, type: "hit" },
       { time: 1.5, type: "hit" },
-      { time: 2, type: "rest" },
-      { time: 3.5, type: "hit" }
+      { time: 2.25, type: "hit" }
     ];
   }
 
   function generateTripletPattern() {
     return [
       { time: 0, type: "hit" },
-      { time: 0.333, type: "rest" },
-      { time: 0.667, type: "hit" },
-      { time: 1, type: "rest" },
-      { time: 1.333, type: "hit" },
-      { time: 1.667, type: "rest" }
+      { time: 0.33, type: "hit" },
+      { time: 0.67, type: "hit" },
+      { time: 1, type: "hit" }
     ];
   }
 
+  function applyBeatPatternToTrack(index, pattern) {
+    const track = tracks[index];
+    trackPatterns[index] = pattern;
+    nextPatterns = []; // Clear redo stack
+  }
+
   function visualizeBeatPattern(index, pattern) {
+    const track = tracks[index];
     const canvas = document.querySelector(`canvas[data-index="${index}"]`);
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     pattern.forEach((beat) => {
       if (beat.type === "hit") {
-        ctx.fillStyle = "green";
-        ctx.fillRect(beat.time * canvas.width, 0, 10, canvas.height);
+        ctx.fillStyle = "#00FF00";
+        ctx.fillRect(beat.time * canvas.width / subdivisionLevel, 0, 10, canvas.height);
       }
     });
   }
 
-  function applyBeatPatternToTrack(index, pattern) {
-    tracks[index].pattern = pattern;
-  }
-
   function createEffects(index) {
-    // Reverb effect setup
-    const reverb = document.getElementById(`reverb-slider-${index}`).value;
-    tracks[index].reverbNode.gain.value = reverb;
+    const track = tracks[index];
 
-    // Delay effect setup
-    const delay = document.getElementById(`delay-slider-${index}`).value;
-    tracks[index].delayNode.delayTime.value = delay;
+    // Reverb
+    const reverbSlider = document.getElementById(`reverb-slider-${index}`);
+    track.reverbNode.gain.value = reverbSlider.value;
 
-    // EQ effect setup
-    const eqValue = document.getElementById(`eq-slider-${index}`).value;
-    tracks[index].eqNode.frequency.value = eqValue;
+    // Delay
+    const delaySlider = document.getElementById(`delay-slider-${index}`);
+    track.delayNode.delayTime.value = delaySlider.value;
+
+    // EQ
+    const eqSlider = document.getElementById(`eq-slider-${index}`);
+    track.eqNode.frequency.value = eqSlider.value;
   }
 
   function drawWaveform(buffer, ctx, canvas) {
-    const data = buffer.getChannelData(0); // Mono waveform (left channel)
-    const width = canvas.width;
-    const height = canvas.height;
-    ctx.clearRect(0, 0, width, height);
-    ctx.beginPath();
-    ctx.moveTo(0, height / 2);
-
-    for (let i = 0; i < width; i++) {
-      const sample = data[Math.floor(i * data.length / width)] * (height / 2);
-      ctx.lineTo(i, (height / 2) - sample);
+    const channelData = buffer.getChannelData(0);
+    const step = Math.ceil(channelData.length / canvas.width);
+    const amp = canvas.height / 2;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < canvas.width; i++) {
+      const min = Math.min(...channelData.slice(i * step, (i + 1) * step));
+      const max = Math.max(...channelData.slice(i * step, (i + 1) * step));
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(i, (1 + min) * amp, 1, (max - min) * amp);
     }
-
-    ctx.stroke();
   }
+}
+
+function updateUI() {
+  document.getElementById("track-list").innerHTML = "";
+  document.getElementById("timeline-tracks").innerHTML = "";
 }
