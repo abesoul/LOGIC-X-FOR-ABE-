@@ -1,40 +1,42 @@
 /* Global Styles */
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #0f0f1f, #1c1c2b);
-  color: white;
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #0f0f1f, #1c1c2b);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   overflow-x: hidden;
 }
 
-.glass {
+/* Glassmorphism Panels */
+.glass, button, .track, .sample {
   background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(15px);
+  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: 20px;
-  margin: 10px;
+  padding: 10px;
+  margin: 10px 0;
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
 }
 
-.glass-panel {
-  margin: 20px;
-}
-
-.logo {
-  font-size: 1.8rem;
-  font-weight: bold;
-}
-
-/* Top Bar */
-.top-bar {
+/* Header: Transport Controls */
+#top-bar, .top-bar {
+  background-color: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(20px);
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 10;
   box-shadow: 0 0 20px #00f0ff;
 }
 
@@ -43,8 +45,8 @@ body {
   border: none;
   margin-left: 10px;
   color: #0ff;
-  font-size: 1.2rem;
-  padding: 8px 12px;
+  font-size: 1.1rem;
+  padding: 10px 15px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -53,104 +55,81 @@ body {
 .transport-controls button:hover {
   background: #00f0ff;
   color: #000;
+  box-shadow: 0 0 15px #0ff;
 }
 
-/* Main Editor */
-.main-editor {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 1rem;
-  margin-top: 1rem;
+/* Sidebar */
+#left-sidebar {
+  background-color: rgba(0, 0, 0, 0.6);
+  position: fixed;
+  left: 0;
+  top: 60px;
+  bottom: 0;
+  width: 250px;
+  color: white;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(8px);
 }
 
-.track-strip {
-  background: #111;
+#track-list {
+  margin-bottom: 20px;
+}
+
+.sample {
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.sample:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Main Area */
+#main-area {
+  margin-left: 260px;
+  margin-top: 80px;
+  padding: 20px;
+}
+
+#timeline {
+  margin-bottom: 20px;
+}
+
+.track {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 15px;
   border-radius: 10px;
-  padding: 1rem;
-  margin-bottom: 1rem;
   box-shadow: 0 0 10px #0ff3;
 }
 
-.track-strip h4 {
-  margin: 0 0 0.5rem;
+#timeline h2, #mixer h2 {
+  color: #00f0ff;
 }
 
-.track-strip input[type="range"] {
-  width: 100%;
-  margin-bottom: 0.5rem;
-}
-
-.mute-solo {
+/* Mixer Section */
+#mix {
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  margin-top: 30px;
+  border-top: 2px solid #00f0ff;
+  padding-top: 10px;
 }
 
-.mute-btn, .solo-btn, .fx-btn {
-  flex: 1;
-  background: #222;
-  border: 2px solid #0ff4;
+/* Hidden Utility Class */
+.hidden {
+  display: none;
+}
+
+/* Neon Buttons General */
+button:hover {
+  box-shadow: 0 0 15px #0ff;
   color: #0ff;
-  padding: 0.4rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.mute-btn:hover, .solo-btn:hover, .fx-btn:hover {
-  background: #0ff2;
-}
-
-.mute-btn.active {
-  background: crimson;
-  color: white;
-  border-color: crimson;
-}
-
-.solo-btn.active {
-  background: limegreen;
-  color: white;
-  border-color: limegreen;
-}
-
-/* Timeline Row */
-.timeline-row {
-  background: #1a1a1a;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 10px;
-  box-shadow: 0 0 8px #0ff4;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.timeline-row p {
-  margin: 0;
-  min-width: 60px;
-}
-
-.timeline-row input[type="file"] {
-  color: white;
-}
-
-.timeline-row canvas {
-  background: #000;
-  border-radius: 6px;
-  flex: 1;
-}
-
-.timeline-row button {
-  background: #333;
-  color: #0ff;
-  border: 1px solid #0ff;
-  padding: 0.3rem 0.8rem;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.timeline-row button:hover {
-  background: #0ff3;
-  color: #000;
 }
 
 /* Timeline Grid */
@@ -177,6 +156,11 @@ body {
   z-index: 1;
 }
 
+.beat.selected {
+  border: 2px solid #0ff;
+  background-color: rgba(0, 255, 255, 0.3);
+}
+
 .beat.dragging {
   opacity: 0.8;
 }
@@ -189,42 +173,6 @@ body {
   z-index: 1000;
 }
 
-.snap-to-grid {
-  transition: transform 0.2s ease-in-out;
-}
-
-.beat-shifted {
-  animation: shiftAnimation 0.3s ease-in-out;
-}
-
-@keyframes shiftAnimation {
-  0% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(5px);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
-
-.beat.selected {
-  border: 2px solid #0ff;
-  background-color: rgba(0, 255, 255, 0.3);
-}
-
-.beat.selected::after {
-  opacity: 1;
-  content: attr(data-id);
-  position: absolute;
-  bottom: 5px;
-  left: 5px;
-  font-size: 12px;
-  color: white;
-  transition: opacity 0.3s ease;
-}
-
 /* FX Panel */
 #fx-panel {
   position: fixed;
@@ -234,11 +182,10 @@ body {
   padding: 20px;
   z-index: 10;
   box-shadow: 0 0 25px #0ff;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
   transition: all 0.3s ease;
-}
-
-#fx-panel.hidden {
-  display: none;
 }
 
 #fx-panel h3 {
@@ -272,7 +219,7 @@ body {
   color: #000;
 }
 
-/* Buttons */
+/* Action Buttons */
 #add-track-btn,
 #save-project,
 #load-project {
@@ -283,7 +230,7 @@ body {
   color: black;
   font-weight: bold;
   cursor: pointer;
-  transition: 0.3s ease-in-out;
+  transition: background 0.3s ease;
 }
 
 #add-track-btn:hover,
@@ -293,28 +240,30 @@ body {
   color: #000;
 }
 
-/* Glow Button */
-.glow-btn {
-  background-color: #444;
-  color: white;
-  border: 1px solid #fff;
-  padding: 10px 20px;
+/* Muting and Solo Styles */
+.mute-btn, .solo-btn, .fx-btn {
+  flex: 1;
+  background: #222;
+  border: 2px solid #0ff4;
+  color: #0ff;
+  padding: 0.4rem;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease-in-out;
+  transition: 0.2s;
 }
 
-.glow-btn:hover {
-  background-color: #1a1a2e;
-  box-shadow: 0 0 10px #44d9e0;
+.mute-btn:hover, .solo-btn:hover, .fx-btn:hover {
+  background: #0ff2;
 }
 
-/* Footer Controls */
-.footer-controls {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 1rem;
-  z-index: 50;
+.mute-btn.active {
+  background: crimson;
+  color: white;
+  border-color: crimson;
+}
+
+.solo-btn.active {
+  background: limegreen;
+  color: white;
+  border-color: limegreen;
 }
