@@ -59,7 +59,7 @@ function createTrack() {
   track.eqNode.connect(audioContext.destination);
 
   // Defaults
-  track.reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100);
+  track.reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100); // Placeholder for real IR
   track.delayNode.delayTime.value = 0.3;
   track.eqNode.type = 'lowshelf';
   track.eqNode.frequency.value = 1000;
@@ -211,15 +211,12 @@ function toggleSolo(index) {
   tracks.forEach((track, i) => {
     if (anySoloed && !track.soloed) {
       track.gainNode.disconnect();
-    } else if (!track.muted) {
+    } else {
       track.gainNode.connect(track.panNode);
     }
   });
-
-  document.querySelector(`.solo-btn[data-index="${index}"]`).classList.toggle('active', soloedTrack.soloed);
 }
 
-// Draw Waveform
 function drawWaveform(audioBuffer, ctx) {
   const width = ctx.canvas.width;
   const height = ctx.canvas.height;
@@ -230,14 +227,8 @@ function drawWaveform(audioBuffer, ctx) {
   for (let i = 0; i < width; i++) {
     const min = Math.min(...data.slice(i * step, (i + 1) * step));
     const max = Math.max(...data.slice(i * step, (i + 1) * step));
-    ctx.moveTo(i, (1 + min) * height / 2);
-    ctx.lineTo(i, (1 + max) * height / 2);
+    ctx.lineTo(i, (min + 1) * height / 2);
+    ctx.lineTo(i, (max + 1) * height / 2);
   }
-  ctx.strokeStyle = "#0ff";
   ctx.stroke();
 }
-
-// AI Beat Placeholder
-document.getElementById('generate-ai-beat').addEventListener('click', () => {
-  alert("🧠 AI Beat Suggestion Coming Soon!\nWe'll add kick-snare-hat logic!");
-});
