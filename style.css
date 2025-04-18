@@ -173,26 +173,12 @@ body {
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   transition: background 0.2s ease, transform 0.3s ease;
   position: relative;
+  cursor: grab;
+  z-index: 1;
 }
 
-.beat.selected {
-  background: rgba(0, 255, 255, 0.5);
-  outline: 1px solid cyan;
-}
-
-.beat::after {
-  content: attr(data-id);
-  position: absolute;
-  bottom: 5px;
-  left: 5px;
-  font-size: 12px;
-  color: white;
+.beat.dragging {
   opacity: 0.8;
-  transition: opacity 0.3s ease;
-}
-
-.beat.selected::after {
-  opacity: 1;
 }
 
 .selection-box {
@@ -221,6 +207,22 @@ body {
   100% {
     transform: translateX(0);
   }
+}
+
+.beat.selected {
+  border: 2px solid #0ff;
+  background-color: rgba(0, 255, 255, 0.3);
+}
+
+.beat.selected::after {
+  opacity: 1;
+  content: attr(data-id);
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  font-size: 12px;
+  color: white;
+  transition: opacity 0.3s ease;
 }
 
 /* FX Panel */
