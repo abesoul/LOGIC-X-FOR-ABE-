@@ -186,6 +186,120 @@ document.getElementById('save-project').addEventListener('click', () => {
   alert('✅ Project Saved!');
 });
 
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  // ... other config
+};
+async function saveProject(projectName, tracks) {
+  const user = auth.currentUser;
+  const projectRef = db.collection('users').doc(user.uid).collection('projects').doc(projectName);
+
+  const trackData = [];
+
+  for (const track of tracks) {
+    const file = track.file;
+    const storageRef = storage.ref().child(`users/${user.uid}/projects/${projectName}/${file.name}`);
+    await storageRef.put(file);
+    const fileURL = await storageRef.getDownloadURL();
+
+    trackData.push({
+      name: track.name,
+      volume: track.volume,
+      pan: track.pan,
+      mute: track.mute,
+      solo: track.solo,
+      fileURL: fileURL,
+    });
+  }
+
+  async function loadProject(projectName) {
+  const user = auth.currentUser;
+  const projectRef = db.collection('users').doc(user.uid).collection('projects').doc(projectName);
+  const doc = await projectRef.get();
+
+  if (!doc.exists) {
+    console.error("No such project!");
+    return;
+  }
+function createAnalyser(audioBuffer) {
+  const source = audioCtx.createBufferSource();
+  source.buffer = audioBuffer;
+
+  const analyser = audioCtx.createAnalyser();
+  source.connect(analyser);
+  analyser.connect(audioCtx.destination);
+
+  source.start();
+
+  return analyser;
+}
+
+    function drawWaveform(analyser, canvas) {
+  const ctx = canvas.getContext('2d');
+  const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+  function draw() {
+    requestAnimationFrame(draw);
+    analyser.getByteTimeDomainData(dataArray);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+
+    const sliceWidth = canvas.width / dataArray.length;
+    let x = 0;
+
+    for (let i = 0; i < dataArray.length; i++) {
+      const v = dataArray[i] / 128.0;
+      const y = (v * canvas.height) / 2;
+
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+
+      x += sliceWidth;
+    }
+
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+  }
+
+  draw();
+}
+
+  const projectData = doc.data();
+  for (const track of projectData.tracks) {
+    const response = await fetch(track.fileURL);
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+    // Create track in UI with audioBuffer and track settings
+    createTrackFromData(track, audioBuffer);
+  }
+
+  console.log("Project loaded successfully.");
+}
+
+  await projectRef.set({
+    name: projectName,
+    tracks: trackData,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+
+  console.log("Project saved successfully.");
+}
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+
 // Load Project
 document.getElementById('load-project').addEventListener('click', () => {
   const data = JSON.parse(localStorage.getItem('neondaw_project') || '[]');
