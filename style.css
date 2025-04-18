@@ -1,99 +1,102 @@
 /* style.css */
-
 body {
   margin: 0;
-  font-family: 'Orbitron', sans-serif;
-  background: linear-gradient(135deg, #000010, #02021d);
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #0f0f1f, #1c1c2b);
   color: #fff;
   overflow: hidden;
 }
 
-.glass-panel {
-  backdrop-filter: blur(12px);
-  background: rgba(10, 10, 20, 0.4);
-  border-radius: 20px;
-  margin: 1rem;
-  padding: 1rem;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.2);
-}
-
-.top-bar {
+header#navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding: 10px 30px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 0 20px #00f0ff;
 }
 
-.logo {
+header h1 {
+  font-weight: 700;
   font-size: 1.5rem;
-  color: cyan;
-  text-shadow: 0 0 5px cyan;
+  color: #00f0ff;
 }
 
-.transport button {
-  margin: 0 0.3rem;
+.transport-controls button {
+  background: #111;
+  border: none;
+  margin-left: 10px;
+  color: #0ff;
   font-size: 1.2rem;
-  padding: 0.3rem 0.6rem;
-  background: none;
-  border: 2px solid cyan;
-  border-radius: 5px;
-  color: cyan;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.transport button:hover {
-  background: cyan;
-  color: black;
-  box-shadow: 0 0 10px cyan;
-}
-
-.timeline {
-  min-height: 200px;
-  background: rgba(20, 20, 40, 0.6);
-  border: 2px dashed cyan;
-  border-radius: 15px;
-  margin: 1rem 0;
-  padding: 1rem;
-  overflow-x: scroll;
-  display: flex;
-  gap: 1rem;
-}
-
-.mixer {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem;
-  overflow-x: auto;
-}
-
-.track {
-  min-width: 250px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 10px;
-  padding: 1rem;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-}
-
-.track input[type="range"] {
-  width: 100%;
-}
-
-.glow-btn {
-  margin-top: 1rem;
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  background: black;
-  color: cyan;
-  border: 2px solid cyan;
+  padding: 8px 12px;
   border-radius: 8px;
-  box-shadow: 0 0 10px cyan;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.transport-controls button:hover {
+  background: #00f0ff;
+  color: #000;
+}
+
+#main-ui {
+  display: flex;
+  height: calc(100vh - 60px);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 10px;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+}
+
+#mixer-panel {
+  width: 25%;
+  display: flex;
+  flex-direction: column;
+}
+
+#timeline-panel {
+  width: 75%;
+  display: flex;
+  flex-direction: column;
+}
+
+#timeline-dropzone {
+  height: 100px;
+  border: 2px dashed #00f0ff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+#track-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+button#add-track-btn {
+  margin-top: 20px;
+  padding: 10px;
+  border: none;
+  background: #00f0ff;
+  color: #000;
+  border-radius: 10px;
   cursor: pointer;
   transition: 0.3s;
 }
 
-.glow-btn:hover {
-  background: cyan;
-  color: black;
-  transform: scale(1.05);
+button#add-track-btn:hover {
+  background: #0ff;
+  box-shadow: 0 0 10px #0ff;
 }
