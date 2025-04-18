@@ -1,12 +1,17 @@
-document.getElementById('login-form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    const username = document.getElementById('username').value;
+document.getElementById('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
 
-    // Simple mockup login process (replace with real auth in production)
-    if (username === 'user' && password === 'password') {
-        window.location.href = 'index.html';
+    // Dummy localStorage-based login
+    const storedUsers = JSON.parse(localStorage.getItem('users')) || [];
+    const user = storedUsers.find(u => u.username === username && u.password === password);
+
+    if (user) {
+        localStorage.setItem('loggedInUser', username);
+        window.location.href = 'index.html'; // Redirect to NeonDAW app
     } else {
-        alert('Invalid credentials');
+        alert('Invalid credentials. Please try again.');
     }
 });
+
