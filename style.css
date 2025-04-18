@@ -199,3 +199,12 @@ body {
   gap: 1rem;
   z-index: 50;
 }
+
+/* Added for audio/video elements */
+audio, video {
+  width: 100%;
+  max-width: 300px;
+  margin: 0.5em 0;
+  border-radius: 8px;
+  box-shadow: 0 0 8px #0ff;
+}
