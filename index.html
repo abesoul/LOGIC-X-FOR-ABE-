@@ -9,15 +9,14 @@
 </head>
 <body>
   <div id="app" class="glass-panel">
-
-    <!-- 🎶 Top Bar: Logo + Transport Controls -->
+    <!-- 🎶 Top Bar -->
     <header class="top-bar glass" id="top-bar">
       <h1 class="logo">🎶 NeonDAW</h1>
       <div class="transport-controls">
-        <button id="play">▶️ Play</button>
-        <button id="stop">⏹ Stop</button>
-        <button id="record">🔴 Record</button>
         <button id="rewind">⏪</button>
+        <button id="play">▶️</button>
+        <button id="stop">⏹</button>
+        <button id="record">🔴</button>
         <button id="forward">⏩</button>
         <span id="timecode">00:00:00</span>
         <label>Tempo: <input type="range" id="tempo-slider" min="60" max="180" value="120" /></label>
@@ -30,10 +29,9 @@
       </div>
     </header>
 
-    <!-- 🧠 Main UI Grid -->
+    <!-- 🧠 Main Grid -->
     <main id="main-ui" class="main-editor">
-
-      <!-- 🎚 Left Sidebar -->
+      <!-- 🎚 Sidebar -->
       <aside id="left-sidebar" class="glass">
         <div id="track-list">
           <h2>Track List</h2>
@@ -44,79 +42,22 @@
         <button id="add-track-btn" class="glow-btn">➕ Add Track</button>
       </aside>
 
-      <!-- 📈 Timeline Panel -->
+      <!-- 📈 Timeline Area -->
       <section id="timeline-panel" class="glass">
         <h2>Timeline</h2>
         <div id="timeline-dropzone">
           <p>🗂️ Drag & Drop Audio Files Here</p>
         </div>
-
         <label for="zoom-slider">Zoom:</label>
-        <input type="range" id="zoom-slider" min="1" max="4" value="1" step="0.25" />
-
-        <div id="timeline-grid"></div>
-
-        <div id="timeline-tracks">
-          <div class="timeline-row">
-            <canvas class="waveform" width="240" height="60"></canvas>
-            <button class="load-file-btn" data-index="0">Load File</button>
-            <input type="file" class="file-upload" data-index="0" accept="audio/*" style="display: none;" />
-          </div>
+        <input type="range" id="zoom-slider" min="0.5" max="2" step="0.1" value="1" />
+        <div id="timeline-grid">
+          <div id="timeline-tracks"></div>
         </div>
       </section>
-
-      <!-- 🎛 Mixer Panel -->
-      <section id="mixer" class="glass">
-        <h2>Mixer</h2>
-        <div id="mixer-controls"></div>
-      </section>
     </main>
-
-    <!-- 💾 Footer Controls -->
-    <footer class="footer-controls">
-      <button id="save-project-footer">💾 Save Project</button>
-      <button id="load-project">📂 Load Project</button>
-      <button id="generate-ai-beat">🧠 Generate AI Beat</button>
-    </footer>
-
-    <!-- 🌀 FX Panel -->
-    <div id="fx-panel" class="glass hidden">
-      <h3>FX Rack</h3>
-
-      <label for="reverb-slider">Reverb</label>
-      <input id="reverb-slider" type="range" min="0" max="1" step="0.01" value="0.2" />
-
-      <label for="delay-slider">Delay</label>
-      <input id="delay-slider" type="range" min="0" max="1" step="0.01" value="0.1" />
-
-      <label for="eq-slider">EQ (Treble)</label>
-      <input id="eq-slider" type="range" min="1000" max="10000" value="5000" />
-
-      <label for="filter-slider">Filter</label>
-      <input id="filter-slider" type="range" min="0" max="100" value="50" />
-
-      <label for="bitcrusher-slider">Bitcrusher</label>
-      <input id="bitcrusher-slider" type="range" min="0" max="100" value="10" />
-
-      <button id="apply-fx-btn">Apply FX</button>
-      <button id="close-fx-btn">Close</button>
-    </div>
   </div>
 
-  <!-- 🔥 Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
-
-  <!-- 🧠 Modular Scripts -->
-  <script type="module" src="js/transport.js"></script>
-  <script type="module" src="js/timeline.js"></script>
-  <script type="module" src="js/mixer.js"></script>
-  <script type="module" src="js/fx.js"></script>
-  <script type="module" src="js/track.js"></script>
-  <script type="module" src="js/ui.js"></script>
-  <script type="module" src="js/storage.js"></script>
-  <script type="module" src="js/main.js"></script>
+  <!-- 💻 Logic Script -->
+  <script src="script.js"></script>
 </body>
 </html>
