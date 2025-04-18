@@ -1,15 +1,40 @@
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let trackCounter = 0;
 let tracks = [];
-let currentFXTrack = null;
 
-document.getElementById('add-track-btn').addEventListener('click', () => {
+document.getElementById("add-track-btn").addEventListener("click", () => {
   const track = createTrack();
   tracks.push(track);
   updateUI();
+  const index = trackCounter++;
+  const trackStrip = document.createElement("div");
+  trackStrip.className = "track-strip";
+  trackStrip.innerHTML = `
+    <h4>Track ${index + 1}</h4>
+    <div class="mute-solo">
+      <button class="mute-btn" data-index="${index}">Mute</button>
+      <button class="solo-btn" data-index="${index}">Solo</button>
+    </div>
+    <input type="range" class="volume" data-index="${index}" min="0" max="1" step="0.01" value="1">
+    <input type="range" class="pan" data-index="${index}" min="-1" max="1" step="0.1" value="0">
+    <button class="fx-btn" data-index="${index}">🎛 FX</button>
+  `;
+  document.getElementById("track-list").appendChild(trackStrip);
+
+  const timelineRow = document.createElement("div");
+  timelineRow.className = "timeline-row";
+  timelineRow.innerHTML = `
+    <p>Track ${index + 1}</p>
+    <button class="load-file-btn" data-index="${index}">🎵 Load File</button>
+    <input type="file" class="file-upload" data-index="${index}" accept="audio/*" style="display:none;" />
+    <canvas class="waveform" data-index="${index}" height="60" width="240"></canvas>
+  `;
+  document.getElementById("timeline-tracks").appendChild(timelineRow);
+
+  initTrackLogic(index);
 });
 
 function createTrack() {
-  // Audio Nodes
   const track = {
     audioElement: new Audio(),
     gainNode: audioContext.createGain(),
@@ -115,6 +140,7 @@ function updateUI() {
       const arrayBuffer = await file.arrayBuffer();
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
       tracks[index].fileBuffer = audioBuffer;
+      drawWaveform(audioBuffer, document.querySelector(`canvas[data-index="${index}"]`).getContext("2d"));
     });
   });
 }
@@ -191,6 +217,24 @@ function toggleSolo(index) {
   });
 
   document.querySelector(`.solo-btn[data-index="${index}"]`).classList.toggle('active', soloedTrack.soloed);
+}
+
+// Draw Waveform
+function drawWaveform(audioBuffer, ctx) {
+  const width = ctx.canvas.width;
+  const height = ctx.canvas.height;
+  const data = audioBuffer.getChannelData(0);
+  ctx.clearRect(0, 0, width, height);
+  ctx.beginPath();
+  const step = Math.floor(data.length / width);
+  for (let i = 0; i < width; i++) {
+    const min = Math.min(...data.slice(i * step, (i + 1) * step));
+    const max = Math.max(...data.slice(i * step, (i + 1) * step));
+    ctx.moveTo(i, (1 + min) * height / 2);
+    ctx.lineTo(i, (1 + max) * height / 2);
+  }
+  ctx.strokeStyle = "#0ff";
+  ctx.stroke();
 }
 
 // AI Beat Placeholder
