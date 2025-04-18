@@ -2,6 +2,7 @@ const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let trackCounter = 0;
 let tracks = [];
 let trackPatterns = [];
+let tempo = 120; // Default tempo (beats per minute)
 
 document.getElementById("add-track-btn").addEventListener("click", () => {
   const index = trackCounter++;
@@ -102,7 +103,7 @@ function updateUI() {
     timelineTracks.appendChild(timelineRow);
   });
 
-  // Bind Events
+  // Bind Events for Volume and Pan sliders
   document.querySelectorAll('.volume').forEach(slider => {
     slider.addEventListener('input', e => {
       tracks[e.target.dataset.index].gainNode.gain.value = e.target.value;
@@ -116,44 +117,31 @@ function updateUI() {
   });
 
   document.querySelectorAll('.mute-btn').forEach(btn => {
-    btn.addEventListener('click', e => toggleMute(e.target.dataset.index));
-  });
-
-  document.querySelectorAll('.solo-btn').forEach(btn => {
-    btn.addEventListener('click', e => toggleSolo(e.target.dataset.index));
-  });
-
-  document.querySelectorAll('.fx-btn').forEach(btn => {
-    btn.addEventListener('click', e => showFXPanel(e.target.dataset.index));
-  });
-
-  document.querySelectorAll('.load-file-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      const index = e.target.dataset.index;
-      document.querySelector(`.file-upload[data-index="${index}"]`).click();
+    btn.addEventListener('click', (e) => {
+      const track = tracks[e.target.dataset.index];
+      track.muted = !track.muted;
+      track.gainNode.gain.value = track.muted ? 0 : 1;
     });
   });
 
-  document.querySelectorAll('.file-upload').forEach(input => {
-    input.addEventListener('change', async (e) => {
-      const index = e.target.dataset.index;
-      const file = e.target.files[0];
-      if (!file) return;
-      const arrayBuffer = await file.arrayBuffer();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      tracks[index].fileBuffer = audioBuffer;
-      drawWaveform(audioBuffer, document.querySelector(`canvas[data-index="${index}"]`).getContext("2d"));
+  document.querySelectorAll('.solo-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const track = tracks[e.target.dataset.index];
+      track.soloed = !track.soloed;
+      if (track.soloed) {
+        tracks.forEach(t => {
+          if (t !== track) t.gainNode.gain.value = 0; // Mute all other tracks
+        });
+      } else {
+        tracks.forEach(t => t.gainNode.gain.value = 1); // Unmute all tracks
+      }
     });
   });
 }
 
-// Logic to handle track's playback, mute, solo, and FX
 function initTrackLogic(index) {
   const fileInput = document.querySelector(`.file-upload[data-index="${index}"]`);
   const loadBtn = document.querySelector(`.load-file-btn[data-index="${index}"]`);
-  const playBtn = document.querySelector(`.play-btn[data-index="${index}"]`);
-  const stopBtn = document.querySelector(`.stop-btn[data-index="${index}"]`);
-  const suggestBeatBtn = document.querySelector(`.suggest-beat-btn[data-index="${index}"]`);
   const canvas = document.querySelector(`canvas[data-index="${index}"]`);
   const ctx = canvas.getContext("2d");
 
@@ -177,45 +165,9 @@ function initTrackLogic(index) {
     drawWaveform(audioBuffer, ctx, canvas);
   });
 
-  playBtn.addEventListener("click", () => {
-    if (!audioBuffer) return;
-
-    // Create the source node
-    sourceNode = audioContext.createBufferSource();
-    sourceNode.buffer = audioBuffer;
-
-    // Create and connect effects
-    createEffects(index);
-
-    // Connect the effects chain
-    sourceNode.connect(reverbNode);
-    reverbNode.connect(delayNode);
-    delayNode.connect(eqNode);
-    eqNode.connect(audioContext.destination);
-
-    sourceNode.start();
-  });
-
-  stopBtn.addEventListener("click", () => {
-    if (sourceNode) {
-      sourceNode.stop();
-      sourceNode.disconnect();
-    }
-  });
-
-  // Smart Beat Suggestion Logic
-  suggestBeatBtn.addEventListener("click", () => {
-    const pattern = generateBeatPattern();
-    trackPatterns.push(pattern);
-    console.log("Suggested Beat Pattern:", pattern);
-    applyBeatPatternToTrack(index, pattern);
-    visualizeBeatPattern(index, pattern);
-  });
-
-  function createEffects(index) {
+  function createEffects() {
     // Reverb Effect
     reverbNode = audioContext.createConvolver();
-    // Load reverb impulse (use a short default or external file)
 
     // Delay Effect
     delayNode = audioContext.createDelay();
@@ -225,50 +177,36 @@ function initTrackLogic(index) {
     eqNode = audioContext.createBiquadFilter();
     eqNode.type = "highshelf"; // Adjust for treble frequency
     eqNode.frequency.setValueAtTime(eqSlider.value, audioContext.currentTime);
-    eqNode.gain.setValueAtTime(10, audioContext.currentTime); // Sample value
+    eqNode.gain.setValueAtTime(10, audioContext.currentTime); // Boost treble
+
+    // Update effects in real-time as sliders are changed
+    reverbSlider.addEventListener("input", () => {
+      reverbNode.gain.setValueAtTime(reverbSlider.value, audioContext.currentTime);
+    });
+
+    delaySlider.addEventListener("input", () => {
+      delayNode.delayTime.setValueAtTime(delaySlider.value, audioContext.currentTime);
+    });
+
+    eqSlider.addEventListener("input", () => {
+      eqNode.frequency.setValueAtTime(eqSlider.value, audioContext.currentTime);
+    });
   }
-}
 
-function drawWaveform(audioBuffer, ctx, canvas) {
-  const channelData = audioBuffer.getChannelData(0); // Left channel for simplicity
-  const length = channelData.length;
-  const step = Math.ceil(length / canvas.width);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  for (let i = 0; i < canvas.width; i++) {
-    const min = Math.min(...channelData.slice(i * step, (i + 1) * step));
-    const max = Math.max(...channelData.slice(i * step, (i + 1) * step));
-    ctx.fillRect(i, (1 + min) * canvas.height / 2, 1, (max - min) * canvas.height / 2);
+  function drawWaveform(audioBuffer, ctx, canvas) {
+    const width = canvas.width;
+    const height = canvas.height;
+    const data = audioBuffer.getChannelData(0);
+    ctx.clearRect(0, 0, width, height);
+    ctx.beginPath();
+    const step = Math.floor(data.length / width);
+    for (let i = 0; i < width; i++) {
+      const min = Math.min(...data.slice(i * step, (i + 1) * step));
+      const max = Math.max(...data.slice(i * step, (i + 1) * step));
+      ctx.moveTo(i, (1 + min) * height / 2);
+      ctx.lineTo(i, (1 + max) * height / 2);
+    }
+    ctx.strokeStyle = "#0ff";
+    ctx.stroke();
   }
-}
-
-function toggleMute(index) {
-  const track = tracks[index];
-  track.muted = !track.muted;
-  track.gainNode.gain.value = track.muted ? 0 : 1;
-}
-
-function toggleSolo(index) {
-  const track = tracks[index];
-  track.soloed = !track.soloed;
-  tracks.forEach((otherTrack, i) => {
-    if (i !== index) otherTrack.gainNode.gain.value = track.soloed ? 0 : 1;
-  });
-}
-
-function showFXPanel(index) {
-  alert(`FX panel for Track ${index + 1}`);
-}
-
-function generateBeatPattern() {
-  // Placeholder for smart AI-generated beat pattern
-  return [1, 0, 1, 0, 0, 1, 0, 1];
-}
-
-function applyBeatPatternToTrack(index, pattern) {
-  // Logic to apply generated pattern to track's sequence
-}
-
-function visualizeBeatPattern(index, pattern) {
-  // Update UI or waveform visualization based on the pattern
 }
