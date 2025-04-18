@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
       <h4>Track ${trackCount}</h4>
       <input type="file" accept="audio/*" data-id="${trackId}" class="file-upload"/>
       <canvas class="waveform" width="240" height="60" data-id="${trackId}"></canvas>
+      <button class="load-file-btn" data-index="${index}">Load File</button>
+<input type="file" class="file-upload" data-index="${index}" accept="audio/*" style="display:none;" />
       <button class="play-btn">▶</button>
       <button class="stop-btn">■</button>
     `;
