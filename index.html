@@ -42,6 +42,19 @@
         <label for="zoom-slider">Zoom:</label>
         <input type="range" id="zoom-slider" min="1" max="4" value="1" step="0.25" />
 
+        <!-- Timeline Grid -->
+        <div id="timeline-grid">
+          <!-- Default beats -->
+          <div class="beat" data-index="0"></div>
+          <div class="beat" data-index="1"></div>
+          <div class="beat" data-index="2"></div>
+          <div class="beat" data-index="3"></div>
+          <div class="beat" data-index="4"></div>
+          <div class="beat" data-index="5"></div>
+          <div class="beat" data-index="6"></div>
+          <div class="beat" data-index="7"></div>
+        </div>
+
         <!-- Timeline Tracks -->
         <div id="timeline-tracks">
           <!-- Dynamically populated track rows -->
@@ -61,7 +74,6 @@
     <button id="save-project">💾 Save Project</button>
     <button id="load-project">📂 Load Project</button>
     <button id="generate-ai-beat">🧠 Generate AI Beat</button>
-
   </footer>
 
   <!-- FX Panel (Hidden by default) -->
@@ -81,10 +93,10 @@
   </div>
 
   <!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
 
   <!-- JavaScript -->
   <script src="script.js"></script>
