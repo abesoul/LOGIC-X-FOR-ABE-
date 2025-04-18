@@ -227,4 +227,75 @@ function generateSyncopatedPattern() {
   return [
     { time: 0, type: "hit" },
     { time: 0.5, type: "rest" },
-    { time: 1.5, type:
+    { time: 1.5, type: "hit" },
+    { time: 2, type: "hit" },
+    { time: 3, type: "rest" }
+  ];
+}
+
+// Example of Polyrhythm Generator for 3:2 pattern
+function generatePolyrhythmPattern(beat1, beat2) {
+  const pattern = [];
+  let time = 0;
+  while (time < 4) {
+    pattern.push({ time, type: "hit" });
+    time += 1 / beat1;
+  }
+  return pattern;
+}
+
+function generateSwingPattern() {
+  return [
+    { time: 0, type: "hit" },
+    { time: 0.75, type: "hit" },
+    { time: 1.5, type: "hit" },
+    { time: 2.25, type: "hit" },
+    { time: 3, type: "hit" }
+  ];
+}
+
+function generateTripletPattern() {
+  return [
+    { time: 0, type: "hit" },
+    { time: 1 / 3, type: "hit" },
+    { time: 2 / 3, type: "hit" },
+    { time: 1, type: "hit" }
+  ];
+}
+
+function generateCustomPattern() {
+  return [];
+}
+
+function applyBeatPatternToTrack(index, pattern) {
+  const track = tracks[index];
+  trackPatterns[index] = pattern;
+  console.log("Applied Pattern to Track", index, pattern);
+}
+
+function visualizeBeatPattern(index, pattern) {
+  const canvas = document.querySelector(`.waveform[data-index="${index}"]`);
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  pattern.forEach(beat => {
+    if (beat.type === "hit") {
+      ctx.fillRect(beat.time * 60, 0, 5, canvas.height);
+    }
+  });
+}
+
+function drawWaveform(audioBuffer, ctx, canvas) {
+  const width = canvas.width;
+  const height = canvas.height;
+  const channelData = audioBuffer.getChannelData(0);
+  const step = Math.ceil(channelData.length / width);
+  const amp = height / 2;
+  ctx.clearRect(0, 0, width, height);
+  
+  for (let i = 0; i < width; i++) {
+    const min = Math.min(...channelData.slice(i * step, (i + 1) * step));
+    const max = Math.max(...channelData.slice(i * step, (i + 1) * step));
+    ctx.fillRect(i, (1 + min) * amp, 1, (max - min) * amp);
+  }
+}
