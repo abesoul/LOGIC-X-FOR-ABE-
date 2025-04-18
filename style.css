@@ -150,6 +150,37 @@ body {
   color: #000;
 }
 
+#timeline-grid {
+  position: relative;
+  height: 200px;
+  border: 1px solid #555;
+  margin-top: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.beat {
+  width: 30px;
+  height: 100%;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease;
+}
+
+.beat.selected {
+  background: rgba(0, 255, 255, 0.5);
+  outline: 1px solid cyan;
+}
+
+.selection-box {
+  position: absolute;
+  border: 1px dashed #0ff;
+  background-color: rgba(0, 255, 255, 0.2);
+  pointer-events: none;
+  z-index: 1000;
+}
+
 #fx-panel {
   position: fixed;
   top: 80px;
