@@ -8,7 +8,10 @@ let nextPatterns = []; // For Redo functionality
 let trackCounter = 0;
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let tracks = [];
+let copiedBeat = null; // Store copied beat for paste functionality
+let selectedBeats = []; // Store selected beats for shifting
 
+// Add track
 document.getElementById("add-track-btn").addEventListener("click", () => {
   const index = trackCounter++;
   const track = createTrack(index);
@@ -67,6 +70,7 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
   displaySubdivisions(index);
 });
 
+// Track creation function
 function createTrack(index) {
   const track = {
     audioElement: new Audio(),
@@ -85,259 +89,149 @@ function createTrack(index) {
   return track;
 }
 
-function initTrackLogic(index) {
-  const track = tracks[index];
-  const fileInput = document.querySelector(`.file-upload[data-index="${index}"]`);
-  const loadBtn = document.querySelector(`.load-file-btn[data-index="${index}"]`);
-  const playBtn = document.querySelector(`.play-btn[data-index="${index}"]`);
-  const stopBtn = document.querySelector(`.stop-btn[data-index="${index}"]`);
-  const suggestBeatBtn = document.querySelector(`.suggest-beat-btn[data-index="${index}"]`);
-  const undoBtn = document.querySelector(`.undo-btn[data-index="${index}"]`);
-  const redoBtn = document.querySelector(`.redo-btn[data-index="${index}"]`);
-  const canvas = document.querySelector(`canvas[data-index="${index}"]`);
-  const ctx = canvas.getContext("2d");
-
-  const rhythmicModelSelect = document.querySelector(`#rhythmic-model-${index}`);
-  const customTimeSignatureInput = document.querySelector(`#custom-time-signature-${index}`);
-  const subdivisionInput = document.querySelector(`#subdivision-${index}`);
-
-  let audioBuffer = null;
-  let sourceNode = null;
-
-  loadBtn.addEventListener("click", () => fileInput.click());
-
-  fileInput.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const arrayBuffer = await file.arrayBuffer();
-    audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    drawWaveform(audioBuffer, ctx, canvas);
-  });
-
-  playBtn.addEventListener("click", () => {
-    if (!audioBuffer) return;
-    sourceNode = audioContext.createBufferSource();
-    sourceNode.buffer = audioBuffer;
-
-    // Apply effects
-    createEffects(index);
-
-    // Connect the effects chain
-    sourceNode.connect(track.reverbNode);
-    track.reverbNode.connect(track.delayNode);
-    track.delayNode.connect(track.eqNode);
-    track.eqNode.connect(track.gainNode);
-    track.gainNode.connect(audioContext.destination);
-    sourceNode.start();
-  });
-
-  stopBtn.addEventListener("click", () => {
-    if (sourceNode) {
-      sourceNode.stop();
-      sourceNode.disconnect();
-    }
-  });
-
-  suggestBeatBtn.addEventListener("click", () => {
-    const selectedModel = rhythmicModelSelect.value;
-    const customTimeSignature = customTimeSignatureInput.value || "4/4";
-    const subdivision = subdivisionInput.value || "quarter";
-    const pattern = generateBeatPattern(selectedModel, customTimeSignature, subdivision);
-    trackPatterns.push(pattern);
-    currentPattern = pattern;
-    applyBeatPatternToTrack(index, pattern);
-    visualizeBeatPattern(index, pattern);
-  });
-
-  undoBtn.addEventListener("click", () => {
-    if (trackPatterns.length > 1) {
-      trackPatterns.pop(); // Remove current pattern
-      currentPattern = trackPatterns[trackPatterns.length - 1]; // Get last pattern
-      applyBeatPatternToTrack(index, currentPattern);
-      visualizeBeatPattern(index, currentPattern);
-    }
-  });
-
-  redoBtn.addEventListener("click", () => {
-    if (nextPatterns.length > 0) {
-      currentPattern = nextPatterns.pop(); // Get next pattern
-      applyBeatPatternToTrack(index, currentPattern);
-      visualizeBeatPattern(index, currentPattern);
-    }
-  });
-
-  const tempoSlider = document.getElementById("tempo-slider");
-  tempoSlider.addEventListener("input", () => {
-    tempo = parseInt(tempoSlider.value);
-    adjustTempoOnTrackPatterns();
-  });
-
-  function adjustTempoOnTrackPatterns() {
-    trackPatterns.forEach((pattern) => {
-      const adjustedPattern = adjustPatternTempo(pattern, tempo);
-      applyBeatPatternToTrack(index, adjustedPattern);
-      visualizeBeatPattern(index, adjustedPattern);
-    });
-  }
-
-  function adjustPatternTempo(pattern, newTempo) {
-    return pattern.map((beat) => {
-      return { ...beat, time: beat.time * (tempo / newTempo) };
-    });
-  }
-
-  function generateBeatPattern(model, timeSignature, subdivision) {
-    switch (model) {
-      case "syncopated":
-        return generateSyncopatedPattern();
-      case "polyrhythm3:2":
-        return generatePolyrhythmPattern(3, 2);
-      case "polyrhythm5:4":
-        return generatePolyrhythmPattern(5, 4);
-      case "swing":
-        return generateSwingPattern();
-      case "triplet":
-        return generateTripletPattern();
-      case "custom":
-        return generateCustomPattern(timeSignature, subdivision);
-      default:
-        return generateBasicPattern();
-    }
-  }
-
-  function generateCustomPattern(timeSignature, subdivision) {
-    const [beatsPerMeasure, beatUnit] = timeSignature.split("/").map(Number);
-    const subdivisionsPerBeat = subdivision === "triplet" ? 3 : 1;
-    const pattern = [];
-
-    for (let i = 0; i < beatsPerMeasure * subdivisionsPerBeat; i++) {
-      pattern.push({ time: (i / subdivisionsPerBeat), type: i % 2 === 0 ? "hit" : "rest" });
-    }
-
-    return pattern;
-  }
-
-  function generateBasicPattern() {
-    return [
-      { time: 0, type: "hit" },
-      { time: 1, type: "hit" },
-      { time: 2, type: "hit" },
-      { time: 3, type: "hit" },
-    ];
-  }
-
-  function generateSyncopatedPattern() {
-    return [
-      { time: 0, type: "hit" },
-      { time: 1.5, type: "hit" },
-      { time: 2.5, type: "hit" },
-    ];
-  }
-
-  function generatePolyrhythmPattern(a, b) {
-    const pattern = [];
-    let time = 0;
-
-    while (time < 4) {
-      pattern.push({ time: time, type: "hit" });
-      time += 4 / a;
-    }
-
-    return pattern;
-  }
-
-  function generateSwingPattern() {
-    return [
-      { time: 0, type: "hit" },
-      { time: 0.75, type: "hit" },
-      { time: 1.5, type: "hit" },
-      { time: 2.25, type: "hit" },
-    ];
-  }
-
-  function generateTripletPattern() {
-    return [
-      { time: 0, type: "hit" },
-      { time: 0.6667, type: "hit" },
-      { time: 1.3333, type: "hit" },
-    ];
-  }
-
-  function applyBeatPatternToTrack(index, pattern) {
-    // Apply pattern to track
-    tracks[index].pattern = pattern;
-  }
-
-  function visualizeBeatPattern(index, pattern) {
-    // Visualize pattern on track strip
-    const trackStrip = document.querySelector(`.track-strip[data-index="${index}"]`);
-    const patternDiv = document.createElement("div");
-    patternDiv.classList.add("pattern");
-    patternDiv.innerHTML = pattern.map((beat) => `<div class="beat ${beat.type}" style="width:${(100 / pattern.length)}%"></div>`).join("");
-    trackStrip.appendChild(patternDiv);
-  }
-
-  function drawWaveform(audioBuffer, ctx, canvas) {
-    const channelData = audioBuffer.getChannelData(0);
-    const width = canvas.width;
-    const height = canvas.height;
-    const step = Math.ceil(channelData.length / width);
-    const amplitude = 1;
-    ctx.clearRect(0, 0, width, height);
-    ctx.beginPath();
-    for (let i = 0; i < width; i++) {
-      const min = Math.min(...channelData.slice(i * step, (i + 1) * step));
-      const max = Math.max(...channelData.slice(i * step, (i + 1) * step));
-      const yMin = (min + 1) * 0.5 * height;
-      const yMax = (max + 1) * 0.5 * height;
-      ctx.moveTo(i, yMin);
-      ctx.lineTo(i, yMax);
-    }
-    ctx.stroke();
+// Finalize beat visuals based on type (split, inserted, deleted)
+function finalizeBeatVisuals(beatElement, type) {
+  if (type === "split") {
+    beatElement.style.backgroundColor = "lightblue"; // Light color for split beats
+    beatElement.style.border = "1px dashed #00f"; // Dashed border
+  } else if (type === "inserted") {
+    beatElement.style.backgroundColor = "yellow"; // Highlight inserted beats
+    beatElement.style.boxShadow = "0 0 5px rgba(255, 255, 0, 0.7)"; // Glowing effect
+  } else if (type === "deleted") {
+    beatElement.style.backgroundColor = "red"; // Red for deleted beats
+    beatElement.style.opacity = 0.5; // Faded look
+    setTimeout(() => beatElement.style.display = 'none', 500); // Smooth removal
   }
 }
 
-function initZoomControls(index) {
-  const zoomInBtn = document.querySelector(`#zoom-in-btn-${index}`);
-  const zoomOutBtn = document.querySelector(`#zoom-out-btn-${index}`);
+// Split a beat
+function splitBeat(time, index) {
+  const timelineRow = document.querySelector(`#timeline-row-${index}`);
+  const patternRow = timelineRow.querySelector(".beat-pattern");
+
+  const newBeat = document.createElement("div");
+  newBeat.classList.add("beat");
+  newBeat.style.left = `${time * 100}%`;
+  newBeat.style.height = "100%";
+  newBeat.dataset.time = time;
+
+  patternRow.appendChild(newBeat);
+  finalizeBeatVisuals(newBeat, "split");
+
+  initDragAndDrop(index);
+}
+
+// Insert a new beat
+function insertBeat(time, index) {
+  const timelineRow = document.querySelector(`#timeline-row-${index}`);
+  const patternRow = timelineRow.querySelector(".beat-pattern");
+
+  const newBeat = document.createElement("div");
+  newBeat.classList.add("beat");
+  newBeat.style.left = `${time * 100}%`;
+  newBeat.style.height = "100%";
+  newBeat.dataset.time = time;
+
+  patternRow.appendChild(newBeat);
+  finalizeBeatVisuals(newBeat, "inserted");
+
+  initDragAndDrop(index);
+}
+
+// Delete a beat
+function deleteBeat(beatElement, index) {
+  finalizeBeatVisuals(beatElement, "deleted");
+  const timelineRow = document.querySelector(`#timeline-row-${index}`);
+  const patternRow = timelineRow.querySelector(".beat-pattern");
+
+  setTimeout(() => {
+    patternRow.removeChild(beatElement);
+  }, 500);
+}
+
+// Enable copying and pasting of beats
+function enableCopyPaste(index) {
+  const timelineRow = document.querySelector(`#timeline-row-${index}`);
+  const patternRow = timelineRow.querySelector(".beat-pattern");
+
+  patternRow.addEventListener("contextmenu", (e) => {
+    if (e.target.classList.contains("beat")) {
+      copiedBeat = e.target;
+      e.preventDefault();
+    }
+  });
+
+  patternRow.addEventListener("click", (e) => {
+    if (copiedBeat && e.target.classList.contains("beat")) {
+      pasteBeat(e.target, index);
+    }
+  });
+}
+
+function pasteBeat(targetBeat, index) {
+  const targetTime = parseFloat(targetBeat.dataset.time);
+  const newBeat = document.createElement("div");
+  newBeat.classList.add("beat");
+  newBeat.style.left = `${targetTime * 100}%`;
+  newBeat.style.height = "100%";
+  newBeat.dataset.time = targetTime;
   
-  zoomInBtn.addEventListener("click", () => {
-    if (zoomLevel < 2) zoomLevel += 0.1;
-    updateTimelineZoom(index);
-  });
+  const timelineRow = document.querySelector(`#timeline-row-${index}`);
+  const patternRow = timelineRow.querySelector(".beat-pattern");
+  patternRow.appendChild(newBeat);
 
-  zoomOutBtn.addEventListener("click", () => {
-    if (zoomLevel > 0.5) zoomLevel -= 0.1;
-    updateTimelineZoom(index);
-  });
+  finalizeBeatVisuals(newBeat, "inserted");
 
-  function updateTimelineZoom(index) {
-    const trackTimeline = document.querySelector(`.timeline-row[data-index="${index}"]`);
-    trackTimeline.style.transform = `scaleX(${zoomLevel})`;
-  }
+  initDragAndDrop(index);
 }
 
-function enableAdvancedBeatEditing(index) {
-  const track = tracks[index];
-  const fxBtn = document.querySelector(`.fx-btn[data-index="${index}"]`);
-  const fxControls = document.querySelector(`.fx-controls[data-index="${index}"]`);
-  fxBtn.addEventListener("click", () => {
-    fxControls.classList.toggle("show");
+// Shifting beats in a pattern
+function enablePatternShifting(index) {
+  const timelineRow = document.querySelector(`#timeline-row-${index}`);
+  const patternRow = timelineRow.querySelector(".beat-pattern");
+
+  patternRow.addEventListener("mousedown", (e) => {
+    if (e.target.classList.contains("beat")) {
+      selectedBeats = [e.target];
+    }
+  });
+
+  patternRow.addEventListener("mousemove", (e) => {
+    if (selectedBeats.length) {
+      const newBeatPosition = e.clientX / patternRow.clientWidth;
+      selectedBeats.forEach(beat => {
+        beat.style.left = `${newBeatPosition * 100}%`;
+      });
+    }
+  });
+
+  patternRow.addEventListener("mouseup", () => {
+    selectedBeats = [];
   });
 }
 
-function displaySubdivisions(index) {
-  const subdivisions = document.createElement("div");
-  subdivisions.className = "subdivisions";
-  subdivisions.innerHTML = `
-    <label for="subdivision-${index}">Subdivision</label>
-    <select id="subdivision-${index}">
-      <option value="quarter">Quarter</option>
-      <option value="eighth">Eighth</option>
-      <option value="sixteenth">Sixteenth</option>
-      <option value="triplet">Triplet</option>
-    </select>
-  `;
-  document.querySelector(`#track-${index}`).appendChild(subdivisions);
+// Shift a section of beats
+function shiftBeatSection(startIndex, endIndex, direction, index) {
+  const timelineRow = document.querySelector(`#timeline-row-${index}`);
+  const patternRow = timelineRow.querySelector(".beat-pattern");
+
+  const beatsInRange = Array.from(patternRow.children).filter(beat => {
+    const time = parseFloat(beat.dataset.time);
+    return time >= startIndex && time <= endIndex;
+  });
+
+  beatsInRange.forEach(beat => {
+    const newTime = parseFloat(beat.dataset.time) + direction;
+    beat.dataset.time = newTime;
+    beat.style.left = `${newTime * 100}%`;
+  });
 }
 
+function initDragAndDrop(index) {
+  // Logic to enable dragging and dropping of beat blocks
+}
+
+// Zoom functionality
+function initZoomControls(index) {
+  // Handle zoom-in and zoom-out functionality for track view
+}
