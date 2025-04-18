@@ -2,9 +2,9 @@ const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let trackCounter = 0;
 let tracks = [];
 let trackPatterns = [];
-let tempo = 120; // Default tempo (beats per minute)
 let previousPatterns = []; // For Undo functionality
 let nextPatterns = []; // For Redo functionality
+let tempo = 120; // Default tempo (beats per minute)
 
 document.getElementById("add-track-btn").addEventListener("click", () => {
   const index = trackCounter++;
@@ -12,6 +12,7 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
   tracks.push(track);
   updateUI();
 
+  // Create track strip
   const trackStrip = document.createElement("div");
   trackStrip.className = "track-strip";
   trackStrip.innerHTML = `
@@ -26,6 +27,7 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
   `;
   document.getElementById("track-list").appendChild(trackStrip);
 
+  // Create track timeline row
   const timelineRow = document.createElement("div");
   timelineRow.className = "timeline-row";
   timelineRow.innerHTML = `
@@ -51,6 +53,7 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
   `;
   document.getElementById("timeline-tracks").appendChild(timelineRow);
 
+  // Initialize track functionality
   initTrackLogic(index);
 });
 
@@ -69,59 +72,11 @@ function createTrack(index) {
   };
 
   track.audioElement.crossOrigin = "anonymous";
-  const sourceNode = audioContext.createMediaElementSource(track.audioElement);
-  sourceNode.connect(track.gainNode);
-
-  track.gainNode.connect(track.panNode);
-  track.panNode.connect(track.reverbNode);
-  track.reverbNode.connect(track.delayNode);
-  track.delayNode.connect(track.eqNode);
-  track.eqNode.connect(audioContext.destination);
-
-  // Defaults
-  track.reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100); // Placeholder for real IR
-  track.delayNode.delayTime.value = 0.3;
-  track.eqNode.type = 'lowshelf';
-  track.eqNode.frequency.value = 1000;
-  track.gainNode.gain.value = 1;
-
   return track;
 }
 
-function updateUI() {
-  const trackList = document.getElementById('track-list');
-  const timelineTracks = document.getElementById('timeline-tracks');
-  trackList.innerHTML = '';
-  timelineTracks.innerHTML = '';
-
-  tracks.forEach((track, index) => {
-    const trackStrip = document.createElement('div');
-    trackStrip.classList.add('track-strip');
-    trackStrip.innerHTML = `
-      <h4>Track ${index + 1}</h4>
-      <div class="mute-solo">
-        <button class="mute-btn" data-index="${index}">Mute</button>
-        <button class="solo-btn" data-index="${index}">Solo</button>
-      </div>
-      <input type="range" class="volume" data-index="${index}" min="0" max="1" step="0.01" value="1">
-      <input type="range" class="pan" data-index="${index}" min="-1" max="1" step="0.1" value="0">
-      <button class="fx-btn" data-index="${index}">🎛 FX</button>
-    `;
-    trackList.appendChild(trackStrip);
-
-    const timelineRow = document.createElement('div');
-    timelineRow.classList.add('timeline-row');
-    timelineRow.innerHTML = `
-      <p>Track ${index + 1}</p>
-      <button class="load-file-btn" data-index="${index}">🎵 Load File</button>
-      <input type="file" class="file-upload" data-index="${index}" accept="audio/*" style="display:none;" />
-      <canvas class="waveform" data-index="${index}" height="60" width="240"></canvas>
-    `;
-    timelineTracks.appendChild(timelineRow);
-  });
-}
-
 function initTrackLogic(index) {
+  const track = tracks[index];
   const fileInput = document.querySelector(`.file-upload[data-index="${index}"]`);
   const loadBtn = document.querySelector(`.load-file-btn[data-index="${index}"]`);
   const playBtn = document.querySelector(`.play-btn[data-index="${index}"]`);
@@ -135,12 +90,13 @@ function initTrackLogic(index) {
   const reverbSlider = document.querySelector(`#reverb-slider-${index}`);
   const delaySlider = document.querySelector(`#delay-slider-${index}`);
   const eqSlider = document.querySelector(`#eq-slider-${index}`);
+  const rhythmicModelSelect = document.querySelector(`#rhythmic-model-${index}`);
 
   let audioBuffer = null;
   let sourceNode = null;
-  let reverbNode = null;
-  let delayNode = null;
-  let eqNode = null;
+  let reverbNode = track.reverbNode;
+  let delayNode = track.delayNode;
+  let eqNode = track.eqNode;
   let currentPattern = [];
 
   loadBtn.addEventListener("click", () => fileInput.click());
@@ -181,7 +137,8 @@ function initTrackLogic(index) {
 
   // Smart Beat Suggestion Logic
   suggestBeatBtn.addEventListener("click", () => {
-    const pattern = generateBeatPattern();
+    const selectedModel = rhythmicModelSelect.value;
+    const pattern = generateBeatPattern(selectedModel);
     trackPatterns.push(pattern);
     previousPatterns.push(currentPattern); // Save current state for undo
     nextPatterns = []; // Clear redo stack
@@ -205,52 +162,113 @@ function initTrackLogic(index) {
   redoBtn.addEventListener("click", () => {
     if (nextPatterns.length > 0) {
       previousPatterns.push(currentPattern); // Save current state for undo
-      currentPattern = nextPatterns.pop(); // Get last pattern state
+      currentPattern = nextPatterns.pop(); // Get last pattern state from redo stack
       applyBeatPatternToTrack(index, currentPattern);
       visualizeBeatPattern(index, currentPattern);
     }
   });
-}
 
-function generateBeatPattern() {
-  // Basic example: generate a random pattern
-  return Array.from({ length: 16 }, () => Math.random() > 0.5);
-}
+  // Tempo Slider (Sync with Playback)
+  const tempoSlider = document.getElementById("tempo-slider");
+  tempoSlider.addEventListener("input", () => {
+    tempo = parseInt(tempoSlider.value);
+    updateTempoOnTracks(tempo);
+  });
 
-function applyBeatPatternToTrack(index, pattern) {
-  console.log(`Applying pattern to track ${index + 1}`, pattern);
-}
+  // Tempo Adjustment on Play/Pause
+  function updateTempoOnTracks(newTempo) {
+    trackPatterns.forEach((pattern, idx) => {
+      // Adjust the speed of the beat pattern based on the new tempo
+      const adjustedPattern = adjustPatternTempo(pattern, newTempo);
+      visualizeBeatPattern(idx, adjustedPattern);
+    });
 
-function visualizeBeatPattern(index, pattern) {
-  console.log(`Visualizing pattern for track ${index + 1}`);
-}
-
-function createEffects(index) {
-  const reverbSlider = document.querySelector(`#reverb-slider-${index}`);
-  const delaySlider = document.querySelector(`#delay-slider-${index}`);
-  const eqSlider = document.querySelector(`#eq-slider-${index}`);
-
-  reverbNode = audioContext.createConvolver();
-  delayNode = audioContext.createDelay();
-  eqNode = audioContext.createBiquadFilter();
-
-  delayNode.delayTime.value = delaySlider.value;
-  eqNode.frequency.value = eqSlider.value;
-  eqNode.type = "lowshelf";
-  reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100); // Placeholder for actual reverb buffer
-}
-
-function drawWaveform(buffer, ctx, canvas) {
-  const data = buffer.getChannelData(0);
-  const width = canvas.width;
-  const height = canvas.height;
-  ctx.clearRect(0, 0, width, height);
-  ctx.beginPath();
-  ctx.moveTo(0, height / 2);
-  for (let i = 0; i < data.length; i++) {
-    const x = (i / data.length) * width;
-    const y = (data[i] * height) / 2 + height / 2;
-    ctx.lineTo(x, y);
+    // Sync tempo with audio playback
+    if (sourceNode) {
+      sourceNode.playbackRate.value = newTempo / 120; // Adjust playback rate to tempo
+    }
   }
-  ctx.stroke();
+
+  // Function to generate a more sophisticated beat pattern based on selected rhythmic model
+  function generateBeatPattern(model) {
+    const complexity = 16; // Beats per pattern (16th notes)
+    const pattern = [];
+    const baseRhythms = {
+      basic: [1, 0, 0, 1], // Basic 4/4
+      syncopated: [1, 0, 1, 0], // Syncopated rhythm
+      polyrhythm: [1, 0, 1, 0, 1, 0], // Polyrhythm (3 against 4)
+      swing: [1, 0.5, 0.5, 1], // Swing rhythm
+      triplet: [1, 0, 0.5, 0.5], // Triplet rhythm
+    };
+
+    const rhythmTemplate = baseRhythms[model];
+    
+    for (let i = 0; i < complexity; i++) {
+      pattern.push(rhythmTemplate[i % rhythmTemplate.length]);
+    }
+    return pattern;
+  }
+
+  // Apply generated beat to the track
+  function applyBeatPatternToTrack(index, pattern) {
+    console.log(`Applying beat pattern to track ${index + 1}:`, pattern);
+    // Further implementation can sync pattern with track playback
+  }
+
+  // Visualize beat pattern on canvas
+  function visualizeBeatPattern(index, pattern) {
+    const canvas = document.querySelector(`canvas[data-index="${index}"]`);
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    ctx.clearRect(0, 0, width, height);
+
+    const stepWidth = width / pattern.length;
+    pattern.forEach((step, i) => {
+      ctx.fillStyle = step > 0 ? "green" : "gray";
+      ctx.fillRect(i * stepWidth, 0, stepWidth, height);
+    });
+  }
+
+  // Draw waveform on the canvas
+  function drawWaveform(buffer, ctx, canvas) {
+    const rawData = buffer.getChannelData(0);
+    const samples = 3000;
+    const blockSize = Math.floor(rawData.length / samples);
+    const data = new Array(samples);
+
+    for (let i = 0; i < samples; i++) {
+      let sum = 0;
+      for (let j = 0; j < blockSize; j++) {
+        sum += rawData[i * blockSize + j];
+      }
+      data[i] = sum / blockSize;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const sliceWidth = canvas.width / samples;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#00f";
+    ctx.beginPath();
+    ctx.moveTo(0, (data[0] + 1) * canvas.height / 2);
+
+    for (let i = 1; i < samples; i++) {
+      ctx.lineTo(i * sliceWidth, (data[i] + 1) * canvas.height / 2);
+    }
+
+    ctx.stroke();
+  }
 }
+
+// Dynamically adjust the tempo slider's display
+document.addEventListener("DOMContentLoaded", function () {
+  const tempoSlider = document.getElementById("tempo-slider");
+  const tempoDisplay = document.getElementById("tempo-display");
+  tempoDisplay.textContent = `Tempo: ${tempoSlider.value} BPM`;
+
+  tempoSlider.addEventListener("input", function () {
+    tempoDisplay.textContent = `Tempo: ${tempoSlider.value} BPM`;
+  });
+});
