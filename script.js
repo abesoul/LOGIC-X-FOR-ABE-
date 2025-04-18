@@ -94,9 +94,9 @@ function initTrackLogic(index) {
 
   let audioBuffer = null;
   let sourceNode = null;
-  let reverbNode = track.reverbNode;
-  let delayNode = track.delayNode;
-  let eqNode = track.eqNode;
+  let reverbNode = null;
+  let delayNode = null;
+  let eqNode = null;
   let currentPattern = [];
 
   loadBtn.addEventListener("click", () => fileInput.click());
@@ -180,95 +180,51 @@ function initTrackLogic(index) {
     trackPatterns.forEach((pattern, idx) => {
       // Adjust the speed of the beat pattern based on the new tempo
       const adjustedPattern = adjustPatternTempo(pattern, newTempo);
+      applyBeatPatternToTrack(idx, adjustedPattern);
       visualizeBeatPattern(idx, adjustedPattern);
     });
-
-    // Sync tempo with audio playback
-    if (sourceNode) {
-      sourceNode.playbackRate.value = newTempo / 120; // Adjust playback rate to tempo
-    }
   }
 
-  // Function to generate a more sophisticated beat pattern based on selected rhythmic model
-  function generateBeatPattern(model) {
-    const complexity = 16; // Beats per pattern (16th notes)
-    const pattern = [];
-    const baseRhythms = {
-      basic: [1, 0, 0, 1], // Basic 4/4
-      syncopated: [1, 0, 1, 0], // Syncopated rhythm
-      polyrhythm: [1, 0, 1, 0, 1, 0], // Polyrhythm (3 against 4)
-      swing: [1, 0.5, 0.5, 1], // Swing rhythm
-      triplet: [1, 0, 0.5, 0.5], // Triplet rhythm
-    };
-
-    const rhythmTemplate = baseRhythms[model];
-    
-    for (let i = 0; i < complexity; i++) {
-      pattern.push(rhythmTemplate[i % rhythmTemplate.length]);
-    }
-    return pattern;
-  }
-
-  // Apply generated beat to the track
-  function applyBeatPatternToTrack(index, pattern) {
-    console.log(`Applying beat pattern to track ${index + 1}:`, pattern);
-    // Further implementation can sync pattern with track playback
-  }
-
-  // Visualize beat pattern on canvas
-  function visualizeBeatPattern(index, pattern) {
-    const canvas = document.querySelector(`canvas[data-index="${index}"]`);
-    const ctx = canvas.getContext("2d");
-    const width = canvas.width;
-    const height = canvas.height;
-    
-    ctx.clearRect(0, 0, width, height);
-
-    const stepWidth = width / pattern.length;
-    pattern.forEach((step, i) => {
-      ctx.fillStyle = step > 0 ? "green" : "gray";
-      ctx.fillRect(i * stepWidth, 0, stepWidth, height);
+  // Helper to adjust the beat pattern based on tempo
+  function adjustPatternTempo(pattern, newTempo) {
+    const adjustedPattern = pattern.map((beat) => {
+      return { ...beat, time: beat.time * (tempo / newTempo) };
     });
-  }
-
-  // Draw waveform on the canvas
-  function drawWaveform(buffer, ctx, canvas) {
-    const rawData = buffer.getChannelData(0);
-    const samples = 3000;
-    const blockSize = Math.floor(rawData.length / samples);
-    const data = new Array(samples);
-
-    for (let i = 0; i < samples; i++) {
-      let sum = 0;
-      for (let j = 0; j < blockSize; j++) {
-        sum += rawData[i * blockSize + j];
-      }
-      data[i] = sum / blockSize;
-    }
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const sliceWidth = canvas.width / samples;
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#00f";
-    ctx.beginPath();
-    ctx.moveTo(0, (data[0] + 1) * canvas.height / 2);
-
-    for (let i = 1; i < samples; i++) {
-      ctx.lineTo(i * sliceWidth, (data[i] + 1) * canvas.height / 2);
-    }
-
-    ctx.stroke();
+    return adjustedPattern;
   }
 }
 
-// Dynamically adjust the tempo slider's display
-document.addEventListener("DOMContentLoaded", function () {
-  const tempoSlider = document.getElementById("tempo-slider");
-  const tempoDisplay = document.getElementById("tempo-display");
-  tempoDisplay.textContent = `Tempo: ${tempoSlider.value} BPM`;
+// Function to generate beat patterns for selected rhythmic models
+function generateBeatPattern(model) {
+  switch (model) {
+    case "syncopated":
+      return generateSyncopatedPattern();
+    case "polyrhythm3:2":
+      return generatePolyrhythmPattern(3, 2);
+    case "polyrhythm5:4":
+      return generatePolyrhythmPattern(5, 4);
+    case "swing":
+      return generateSwingPattern();
+    case "triplet":
+      return generateTripletPattern();
+    case "custom":
+      return generateCustomPattern();
+    default:
+      return generateBasicPattern();
+  }
+}
 
-  tempoSlider.addEventListener("input", function () {
-    tempoDisplay.textContent = `Tempo: ${tempoSlider.value} BPM`;
-  });
-});
+function generateBasicPattern() {
+  return [
+    { time: 0, type: "hit" },
+    { time: 1, type: "hit" },
+    { time: 2, type: "hit" },
+    { time: 3, type: "hit" }
+  ];
+}
+
+function generateSyncopatedPattern() {
+  return [
+    { time: 0, type: "hit" },
+    { time: 0.5, type: "rest" },
+    { time: 1.5, type:
