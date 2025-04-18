@@ -284,3 +284,109 @@ button:hover {
   color: white;
   border-color: limegreen;
 }
+/* === Login Page Styles === */
+.login-body {
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.login-box {
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.neon-title {
+    text-align: center;
+    font-size: 2.5rem;
+    color: #0ff;
+    margin-bottom: 30px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+}
+
+.login-box label {
+    display: block;
+    margin-bottom: 5px;
+    margin-top: 15px;
+    font-size: 0.95rem;
+    color: #ccc;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1rem;
+    transition: background 0.3s ease;
+}
+
+.login-box input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.neon-button {
+    margin-top: 25px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #0ff;
+    color: #000;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.3s ease;
+    box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+}
+
+.neon-button:hover {
+    background: #00f0f0;
+    box-shadow: 0 0 20px #00f0f0, 0 0 30px #00f0f0;
+}
+
+.register-link {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.register-link a {
+    color: #0ff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.register-link a:hover {
+    text-decoration: underline;
+}
