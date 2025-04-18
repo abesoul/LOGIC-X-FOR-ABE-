@@ -35,46 +35,39 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) {
-      handleAudioFile(file);
+      handleMediaFile(file);
       alert(`🎵 Imported file: ${file.name}`);
     }
     dropzone.style.borderColor = '#00f0ff';
   });
 
-  function handleAudioFile(file, index = null) {
+  function handleMediaFile(file, index = null) {
     const fileURL = URL.createObjectURL(file);
+    const isVideo = file.type.startsWith('video');
 
     if (index === null || !tracks[index]) {
       index = tracks.length;
-      const newTrack = createTrack(index);
+      const newTrack = createTrack(index, isVideo);
       tracks.push(newTrack);
       updateUI();
     }
 
     const track = tracks[index];
-    track.audioElement.src = fileURL;
-    track.audioElement.load();
+    track.mediaElement.src = fileURL;
+    track.mediaElement.load();
 
-    track.audioElement.onloadeddata = () => {
+    track.mediaElement.onloadeddata = () => {
       console.log(`✅ File loaded for Track ${index + 1}: ${file.name}`);
-
-      // 🔊 Debug: Test audio playback
-      track.audioElement.play().then(() => {
-        console.log(`▶️ Playing Track ${index + 1}`);
-      }).catch(err => {
-        console.warn(`⚠️ Audio playback error: ${err}`);
-      });
-
-      // 🧪 Debug gain
-      console.log(`Gain for Track ${index + 1}:`, track.gainNode.gain.value);
     };
   }
 
-  function createTrack(index) {
-    const audioElement = new Audio();
-    audioElement.crossOrigin = "anonymous";
+  function createTrack(index, isVideo = false) {
+    const mediaElement = document.createElement(isVideo ? 'video' : 'audio');
+    mediaElement.crossOrigin = "anonymous";
+    mediaElement.controls = true;
+    mediaElement.width = 300;
 
-    const sourceNode = audioContext.createMediaElementSource(audioElement);
+    const sourceNode = audioContext.createMediaElementSource(mediaElement);
     const gainNode = audioContext.createGain();
     const panNode = audioContext.createStereoPanner();
     const reverbNode = audioContext.createConvolver();
@@ -82,23 +75,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const eqNode = audioContext.createBiquadFilter();
     const busNode = audioContext.createGain();
 
-    // 🔗 Full routing with logging
-    try {
-      sourceNode.connect(gainNode);
-      gainNode.connect(panNode);
-      panNode.connect(reverbNode);
-      reverbNode.connect(delayNode);
-      delayNode.connect(eqNode);
-      eqNode.connect(busNode);
-      busNode.connect(audioContext.destination);
-    } catch (e) {
-      console.error('❌ Error connecting audio nodes:', e);
-    }
+    sourceNode.connect(gainNode);
+    gainNode.connect(panNode);
+    panNode.connect(reverbNode);
+    reverbNode.connect(delayNode);
+    delayNode.connect(eqNode);
+    eqNode.connect(audioContext.destination);
 
-    reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100); // Placeholder
+    reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100);
     delayNode.delayTime.value = 0.3;
     eqNode.type = 'lowshelf';
     eqNode.frequency.value = 1000;
+
+    panNode.connect(busNode);
+    busNode.connect(audioContext.destination);
 
     const miniPlayer = document.createElement('div');
     miniPlayer.className = 'mini-player';
@@ -110,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return {
       index,
-      audioElement,
+      mediaElement,
       gainNode,
       panNode,
       reverbNode,
@@ -119,7 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
       busNode,
       muted: false,
       soloed: false,
-      miniPlayer
+      miniPlayer,
+      isVideo
     };
   }
 
@@ -149,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
       row.className = 'timeline-row';
       row.innerHTML = `
         <p>Track ${index + 1}</p>
-        <input type="file" class="file-input" accept="audio/*" data-index="${index}">
+        <input type="file" class="file-input" accept="audio/*,video/*" data-index="${index}">
       `;
       timelineTracks.appendChild(row);
     });
@@ -179,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.querySelectorAll('.file-input').forEach(input => {
-      input.addEventListener('change', (e) => handleAudioFile(e.target.files[0], e.target.dataset.index));
+      input.addEventListener('change', (e) => handleMediaFile(e.target.files[0], e.target.dataset.index));
     });
   }
 
@@ -219,14 +210,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.classList.contains('play-mini-btn')) {
       const index = parseInt(e.target.dataset.index);
       const track = tracks[index];
-      track.audioElement.play();
+      track.mediaElement.play();
       e.target.style.display = 'none';
       e.target.nextElementSibling.style.display = 'inline';
     }
     if (e.target.classList.contains('pause-mini-btn')) {
       const index = parseInt(e.target.dataset.index);
       const track = tracks[index];
-      track.audioElement.pause();
+      track.mediaElement.pause();
       e.target.style.display = 'none';
       e.target.previousElementSibling.style.display = 'inline';
     }
