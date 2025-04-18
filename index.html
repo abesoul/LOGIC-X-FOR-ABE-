@@ -9,17 +9,12 @@
 <body>
     <div id="main-container">
         <h1>Simple DAW</h1>
+
+        <!-- Add Track Button -->
+        <button id="add-track-btn">Add Track</button>
+
         <div id="track-container">
-            <!-- Track 1 -->
-            <div class="track">
-                <h2>Track 1</h2>
-                <input type="file" id="track1-upload" accept="audio/*">
-                <div class="mixer">
-                    <label>Volume:</label><input type="range" id="track1-volume" min="0" max="100" value="50">
-                    <label>Pan:</label><input type="range" id="track1-pan" min="-50" max="50" value="0">
-                </div>
-            </div>
-            <!-- More tracks can be added dynamically -->
+            <!-- Tracks will be dynamically added here -->
         </div>
 
         <div id="effects-container">
