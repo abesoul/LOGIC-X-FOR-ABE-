@@ -3,12 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const trackList = document.getElementById('track-list');
   const timelineTracks = document.getElementById('timeline-tracks');
   const dropzone = document.getElementById('timeline-dropzone');
-
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   let tracks = [];
 
   addTrackBtn.addEventListener('click', () => {
-    const track = createTrack(tracks.length + 1);
+    const track = createTrack(tracks.length);
     tracks.push(track);
     updateUI();
   });
@@ -28,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const file = e.dataTransfer.files[0];
     alert(`🎵 Imported file: ${file.name}`);
     dropzone.style.borderColor = '#00f0ff';
-    // TODO: Render waveform here
+    // TODO: Render waveform
   });
 
   // === Create Track with Audio Chain ===
@@ -43,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const delayNode = audioContext.createDelay();
     const eqNode = audioContext.createBiquadFilter();
 
-    // Connect audio nodes
     sourceNode.connect(gainNode);
     gainNode.connect(panNode);
     panNode.connect(reverbNode);
@@ -51,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     delayNode.connect(eqNode);
     eqNode.connect(audioContext.destination);
 
-    // FX defaults
+    // Defaults
     reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100);
     delayNode.delayTime.value = 0.3;
     eqNode.type = 'lowshelf';
@@ -70,13 +68,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // === UI Updates ===
+  // === UI Update ===
   function updateUI() {
     trackList.innerHTML = '';
     timelineTracks.innerHTML = '';
 
     tracks.forEach((track, index) => {
-      // Mixer UI
+      // Mixer Strip
       const strip = document.createElement('div');
       strip.className = 'track-strip';
       strip.innerHTML = `
@@ -91,17 +89,19 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       trackList.appendChild(strip);
 
-      // Timeline UI
+      // Timeline Row
       const row = document.createElement('div');
       row.className = 'timeline-row';
       row.innerHTML = `
         <p>Track ${index + 1}</p>
-        <button class="load-file-btn" data-index="${index}">Load File</button>
+        <input type="file" class="file-input" data-index="${index}" accept="audio/*">
+        <button class="play-btn" data-index="${index}">▶ Play</button>
+        <button class="stop-btn" data-index="${index}">⏹ Stop</button>
       `;
       timelineTracks.appendChild(row);
     });
 
-    // Attach controls
+    // Attach Events
     document.querySelectorAll('.volume').forEach(slider => {
       slider.addEventListener('input', (e) => {
         tracks[e.target.dataset.index].gainNode.gain.value = e.target.value;
@@ -125,9 +125,52 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.fx-btn').forEach(btn => {
       btn.addEventListener('click', (e) => showFXPanel(e.target.dataset.index));
     });
+
+    document.querySelectorAll('.file-input').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const idx = e.target.dataset.index;
+        const file = e.target.files[0];
+        if (file) {
+          const fileURL = URL.createObjectURL(file);
+          const track = tracks[idx];
+          track.audioElement.src = fileURL;
+          track.audioElement.load();
+          track.audioElement.onloadeddata = () => {
+            console.log(`✅ File loaded for Track ${+idx + 1}: ${file.name}`);
+          };
+        }
+      });
+    });
+
+    document.querySelectorAll('.play-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = e.target.dataset.index;
+        const audio = tracks[idx].audioElement;
+
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+
+        audio.play().then(() => {
+          console.log(`▶ Playing Track ${+idx + 1}`);
+        }).catch(err => {
+          console.error(`⚠️ Error playing Track ${+idx + 1}:`, err);
+        });
+      });
+    });
+
+    document.querySelectorAll('.stop-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = e.target.dataset.index;
+        const audio = tracks[idx].audioElement;
+        audio.pause();
+        audio.currentTime = 0;
+        console.log(`⏹ Stopped Track ${+idx + 1}`);
+      });
+    });
   }
 
-  // === Mute/Solo Handlers ===
+  // === Mute/Solo ===
   function toggleMute(index) {
     const track = tracks[index];
     track.muted = !track.muted;
@@ -149,16 +192,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const fxPanel = document.getElementById('fx-panel');
     const track = tracks[index];
 
-    // Set sliders
     document.getElementById('reverb-slider').value = 0.5;
     document.getElementById('delay-slider').value = track.delayNode.delayTime.value;
     document.getElementById('eq-slider').value = track.eqNode.frequency.value;
 
     fxPanel.classList.remove('hidden');
 
-    // FX Controls
     document.getElementById('reverb-slider').oninput = (e) => {
-      // Placeholder: reverb IR loader goes here
+      // Placeholder for reverb IR loader
     };
     document.getElementById('delay-slider').oninput = (e) => {
       track.delayNode.delayTime.value = e.target.value;
