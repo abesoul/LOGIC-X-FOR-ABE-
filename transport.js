@@ -1,10 +1,10 @@
 export function setupTransport() {
-  // Play Button
-  const playBtn = document.getElementById('play') || document.getElementById('play-btn');
   let audioContext;
   let audioBuffer;
   let audioSource;
 
+  // Play Button
+  const playBtn = document.getElementById('play') || document.getElementById('play-btn');
   if (playBtn) {
     playBtn.addEventListener('click', () => {
       console.log('▶ Play');
