@@ -3,6 +3,8 @@ let trackCounter = 0;
 let tracks = [];
 let trackPatterns = [];
 let tempo = 120; // Default tempo (beats per minute)
+let previousPatterns = []; // For Undo functionality
+let nextPatterns = []; // For Redo functionality
 
 document.getElementById("add-track-btn").addEventListener("click", () => {
   const index = trackCounter++;
@@ -31,6 +33,21 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
     <button class="load-file-btn" data-index="${index}">🎵 Load File</button>
     <input type="file" class="file-upload" data-index="${index}" accept="audio/*" style="display:none;" />
     <canvas class="waveform" data-index="${index}" height="60" width="240"></canvas>
+    <button class="play-btn" data-index="${index}">▶️ Play</button>
+    <button class="stop-btn" data-index="${index}">⏹ Stop</button>
+    <button class="suggest-beat-btn" data-index="${index}">🔮 Suggest Beat</button>
+    <button class="undo-btn" data-index="${index}">↩️ Undo</button>
+    <button class="redo-btn" data-index="${index}">↪️ Redo</button>
+    <div class="fx-controls">
+      <label for="reverb-slider-${index}">Reverb</label>
+      <input id="reverb-slider-${index}" type="range" min="0" max="1" step="0.01" value="0.2" />
+      
+      <label for="delay-slider-${index}">Delay</label>
+      <input id="delay-slider-${index}" type="range" min="0" max="1" step="0.01" value="0.1" />
+      
+      <label for="eq-slider-${index}">EQ (Treble)</label>
+      <input id="eq-slider-${index}" type="range" min="1000" max="10000" value="5000" />
+    </div>
   `;
   document.getElementById("timeline-tracks").appendChild(timelineRow);
 
@@ -102,46 +119,16 @@ function updateUI() {
     `;
     timelineTracks.appendChild(timelineRow);
   });
-
-  // Bind Events for Volume and Pan sliders
-  document.querySelectorAll('.volume').forEach(slider => {
-    slider.addEventListener('input', e => {
-      tracks[e.target.dataset.index].gainNode.gain.value = e.target.value;
-    });
-  });
-
-  document.querySelectorAll('.pan').forEach(slider => {
-    slider.addEventListener('input', e => {
-      tracks[e.target.dataset.index].panNode.pan.value = e.target.value;
-    });
-  });
-
-  document.querySelectorAll('.mute-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const track = tracks[e.target.dataset.index];
-      track.muted = !track.muted;
-      track.gainNode.gain.value = track.muted ? 0 : 1;
-    });
-  });
-
-  document.querySelectorAll('.solo-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const track = tracks[e.target.dataset.index];
-      track.soloed = !track.soloed;
-      if (track.soloed) {
-        tracks.forEach(t => {
-          if (t !== track) t.gainNode.gain.value = 0; // Mute all other tracks
-        });
-      } else {
-        tracks.forEach(t => t.gainNode.gain.value = 1); // Unmute all tracks
-      }
-    });
-  });
 }
 
 function initTrackLogic(index) {
   const fileInput = document.querySelector(`.file-upload[data-index="${index}"]`);
   const loadBtn = document.querySelector(`.load-file-btn[data-index="${index}"]`);
+  const playBtn = document.querySelector(`.play-btn[data-index="${index}"]`);
+  const stopBtn = document.querySelector(`.stop-btn[data-index="${index}"]`);
+  const suggestBeatBtn = document.querySelector(`.suggest-beat-btn[data-index="${index}"]`);
+  const undoBtn = document.querySelector(`.undo-btn[data-index="${index}"]`);
+  const redoBtn = document.querySelector(`.redo-btn[data-index="${index}"]`);
   const canvas = document.querySelector(`canvas[data-index="${index}"]`);
   const ctx = canvas.getContext("2d");
 
@@ -154,6 +141,7 @@ function initTrackLogic(index) {
   let reverbNode = null;
   let delayNode = null;
   let eqNode = null;
+  let currentPattern = [];
 
   loadBtn.addEventListener("click", () => fileInput.click());
 
@@ -165,48 +153,104 @@ function initTrackLogic(index) {
     drawWaveform(audioBuffer, ctx, canvas);
   });
 
-  function createEffects() {
-    // Reverb Effect
-    reverbNode = audioContext.createConvolver();
+  playBtn.addEventListener("click", () => {
+    if (!audioBuffer) return;
 
-    // Delay Effect
-    delayNode = audioContext.createDelay();
-    delayNode.delayTime.setValueAtTime(delaySlider.value, audioContext.currentTime);
+    // Create the source node
+    sourceNode = audioContext.createBufferSource();
+    sourceNode.buffer = audioBuffer;
 
-    // EQ (Treble) Effect
-    eqNode = audioContext.createBiquadFilter();
-    eqNode.type = "highshelf"; // Adjust for treble frequency
-    eqNode.frequency.setValueAtTime(eqSlider.value, audioContext.currentTime);
-    eqNode.gain.setValueAtTime(10, audioContext.currentTime); // Boost treble
+    // Create and connect effects
+    createEffects(index);
 
-    // Update effects in real-time as sliders are changed
-    reverbSlider.addEventListener("input", () => {
-      reverbNode.gain.setValueAtTime(reverbSlider.value, audioContext.currentTime);
-    });
+    // Connect the effects chain
+    sourceNode.connect(reverbNode);
+    reverbNode.connect(delayNode);
+    delayNode.connect(eqNode);
+    eqNode.connect(audioContext.destination);
 
-    delaySlider.addEventListener("input", () => {
-      delayNode.delayTime.setValueAtTime(delaySlider.value, audioContext.currentTime);
-    });
+    sourceNode.start();
+  });
 
-    eqSlider.addEventListener("input", () => {
-      eqNode.frequency.setValueAtTime(eqSlider.value, audioContext.currentTime);
-    });
-  }
-
-  function drawWaveform(audioBuffer, ctx, canvas) {
-    const width = canvas.width;
-    const height = canvas.height;
-    const data = audioBuffer.getChannelData(0);
-    ctx.clearRect(0, 0, width, height);
-    ctx.beginPath();
-    const step = Math.floor(data.length / width);
-    for (let i = 0; i < width; i++) {
-      const min = Math.min(...data.slice(i * step, (i + 1) * step));
-      const max = Math.max(...data.slice(i * step, (i + 1) * step));
-      ctx.moveTo(i, (1 + min) * height / 2);
-      ctx.lineTo(i, (1 + max) * height / 2);
+  stopBtn.addEventListener("click", () => {
+    if (sourceNode) {
+      sourceNode.stop();
+      sourceNode.disconnect();
     }
-    ctx.strokeStyle = "#0ff";
-    ctx.stroke();
+  });
+
+  // Smart Beat Suggestion Logic
+  suggestBeatBtn.addEventListener("click", () => {
+    const pattern = generateBeatPattern();
+    trackPatterns.push(pattern);
+    previousPatterns.push(currentPattern); // Save current state for undo
+    nextPatterns = []; // Clear redo stack
+    currentPattern = pattern;
+    console.log("Suggested Beat Pattern:", pattern);
+    applyBeatPatternToTrack(index, pattern);
+    visualizeBeatPattern(index, pattern);
+  });
+
+  // Undo Button
+  undoBtn.addEventListener("click", () => {
+    if (previousPatterns.length > 0) {
+      nextPatterns.push(currentPattern); // Save current state for redo
+      currentPattern = previousPatterns.pop(); // Get last pattern state
+      applyBeatPatternToTrack(index, currentPattern);
+      visualizeBeatPattern(index, currentPattern);
+    }
+  });
+
+  // Redo Button
+  redoBtn.addEventListener("click", () => {
+    if (nextPatterns.length > 0) {
+      previousPatterns.push(currentPattern); // Save current state for undo
+      currentPattern = nextPatterns.pop(); // Get last pattern state
+      applyBeatPatternToTrack(index, currentPattern);
+      visualizeBeatPattern(index, currentPattern);
+    }
+  });
+}
+
+function generateBeatPattern() {
+  // Basic example: generate a random pattern
+  return Array.from({ length: 16 }, () => Math.random() > 0.5);
+}
+
+function applyBeatPatternToTrack(index, pattern) {
+  console.log(`Applying pattern to track ${index + 1}`, pattern);
+}
+
+function visualizeBeatPattern(index, pattern) {
+  console.log(`Visualizing pattern for track ${index + 1}`);
+}
+
+function createEffects(index) {
+  const reverbSlider = document.querySelector(`#reverb-slider-${index}`);
+  const delaySlider = document.querySelector(`#delay-slider-${index}`);
+  const eqSlider = document.querySelector(`#eq-slider-${index}`);
+
+  reverbNode = audioContext.createConvolver();
+  delayNode = audioContext.createDelay();
+  eqNode = audioContext.createBiquadFilter();
+
+  delayNode.delayTime.value = delaySlider.value;
+  eqNode.frequency.value = eqSlider.value;
+  eqNode.type = "lowshelf";
+  reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100); // Placeholder for actual reverb buffer
+}
+
+function drawWaveform(buffer, ctx, canvas) {
+  const data = buffer.getChannelData(0);
+  const width = canvas.width;
+  const height = canvas.height;
+  ctx.clearRect(0, 0, width, height);
+  ctx.beginPath();
+  ctx.moveTo(0, height / 2);
+  for (let i = 0; i < data.length; i++) {
+    const x = (i / data.length) * width;
+    const y = (data[i] * height) / 2 + height / 2;
+    ctx.lineTo(x, y);
   }
+  ctx.stroke();
 }
