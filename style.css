@@ -1,4 +1,4 @@
-/* Merged Style.css */
+/* Global Styles */
 body {
   font-family: 'Segoe UI', sans-serif;
   background: linear-gradient(135deg, #0f0f1f, #1c1c2b);
@@ -27,6 +27,7 @@ body {
   font-weight: bold;
 }
 
+/* Top Bar */
 .top-bar {
   display: flex;
   justify-content: space-between;
@@ -54,6 +55,7 @@ body {
   color: #000;
 }
 
+/* Main Editor */
 .main-editor {
   display: grid;
   grid-template-columns: 1fr 2fr;
@@ -110,6 +112,7 @@ body {
   border-color: limegreen;
 }
 
+/* Timeline Row */
 .timeline-row {
   background: #1a1a1a;
   padding: 1rem;
@@ -150,6 +153,7 @@ body {
   color: #000;
 }
 
+/* Timeline Grid */
 #timeline-grid {
   position: relative;
   height: 200px;
@@ -167,12 +171,28 @@ body {
   display: inline-block;
   background: rgba(255, 255, 255, 0.1);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, transform 0.3s ease;
+  position: relative;
 }
 
 .beat.selected {
   background: rgba(0, 255, 255, 0.5);
   outline: 1px solid cyan;
+}
+
+.beat::after {
+  content: attr(data-id);
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  font-size: 12px;
+  color: white;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.beat.selected::after {
+  opacity: 1;
 }
 
 .selection-box {
@@ -183,6 +203,23 @@ body {
   z-index: 1000;
 }
 
+.beat-shifted {
+  animation: shiftAnimation 0.3s ease-in-out;
+}
+
+@keyframes shiftAnimation {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* FX Panel */
 #fx-panel {
   position: fixed;
   top: 80px;
@@ -229,6 +266,7 @@ body {
   color: #000;
 }
 
+/* Buttons */
 #add-track-btn,
 #save-project,
 #load-project {
@@ -249,6 +287,7 @@ body {
   color: #000;
 }
 
+/* Footer Controls */
 .footer-controls {
   position: fixed;
   bottom: 20px;
