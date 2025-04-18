@@ -13,6 +13,8 @@ let nextPatterns = [];
 let tracks = [];
 let selectedBeats = [];
 let clipboard = [];
+let undoStack = [];
+let redoStack = [];
 
 let isDragging = false;
 let isSelecting = false;
@@ -105,6 +107,15 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.beat.selected').forEach(b => b.classList.remove('selected'));
     selectedBeats = [];
+  }
+
+  // Undo / Redo actions
+  if (e.ctrlKey && e.key === 'z') {
+    undoAction();
+  }
+
+  if (e.ctrlKey && e.shiftKey && e.key === 'z') {
+    redoAction();
   }
 });
 
