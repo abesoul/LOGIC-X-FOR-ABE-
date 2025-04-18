@@ -141,6 +141,14 @@
       eqNode.type = 'lowshelf';
       eqNode.frequency.value = 1000;
 
+      const miniPlayer = document.createElement('div');
+      miniPlayer.className = 'mini-player';
+      miniPlayer.innerHTML = `
+        <button class="play-mini-btn" data-index="${index}">▶</button>
+        <button class="pause-mini-btn" data-index="${index}" style="display:none;">❚❚</button>
+        <span>Track ${index + 1}</span>
+      `;
+
       return {
         index,
         audioElement,
@@ -150,7 +158,8 @@
         delayNode,
         eqNode,
         muted: false,
-        soloed: false
+        soloed: false,
+        miniPlayer
       };
     }
 
@@ -170,8 +179,9 @@
           <input type="range" class="volume" data-index="${index}" min="0" max="1" step="0.01" value="1">
           <input type="range" class="pan" data-index="${index}" min="-1" max="1" step="0.1" value="0">
           <button class="fx-btn" data-index="${index}">🎛 FX</button>
-          <button class="play-btn" data-index="${index}">▶ Play</button>
-          <button class="stop-btn" data-index="${index}">⏹ Stop</button>
+          <div class="track-mini-player">
+            ${track.miniPlayer.outerHTML}
+          </div>
         `;
         trackList.appendChild(strip);
 
@@ -216,7 +226,7 @@
         });
       });
 
-      document.querySelectorAll('.play-btn').forEach(btn => {
+      document.querySelectorAll('.play-mini-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const idx = e.target.dataset.index;
           const audio = tracks[idx].audioElement;
@@ -227,19 +237,23 @@
 
           audio.play().then(() => {
             console.log(`▶ Playing Track ${parseInt(idx) + 1}`);
+            e.target.style.display = 'none';
+            document.querySelector(`.pause-mini-btn[data-index="${idx}"]`).style.display = 'inline-block';
           }).catch(err => {
             console.error(`⚠️ Error playing Track ${parseInt(idx) + 1}:`, err);
           });
         });
       });
 
-      document.querySelectorAll('.stop-btn').forEach(btn => {
+      document.querySelectorAll('.pause-mini-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const idx = e.target.dataset.index;
           const audio = tracks[idx].audioElement;
           audio.pause();
           audio.currentTime = 0;
           console.log(`⏹ Stopped Track ${parseInt(idx) + 1}`);
+          e.target.style.display = 'none';
+          document.querySelector(`.play-mini-btn[data-index="${idx}"]`).style.display = 'inline-block';
         });
       });
     }
