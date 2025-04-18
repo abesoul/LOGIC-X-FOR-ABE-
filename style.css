@@ -100,3 +100,45 @@ button#add-track-btn:hover {
   background: #0ff;
   box-shadow: 0 0 10px #0ff;
 }
+/* FX Panel Styling */
+#fx-panel {
+  position: fixed;
+  top: 80px;
+  right: 40px;
+  width: 250px;
+  padding: 20px;
+  z-index: 10;
+  box-shadow: 0 0 25px #0ff;
+  transition: all 0.3s ease;
+}
+
+#fx-panel.hidden {
+  display: none;
+}
+
+#fx-panel h3 {
+  color: #00f0ff;
+  margin-bottom: 10px;
+}
+
+#fx-panel label {
+  display: block;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+#fx-panel input[type="range"] {
+  width: 100%;
+}
+
+#close-fx-btn {
+  margin-top: 15px;
+  padding: 8px;
+  width: 100%;
+  background: #00f0ff;
+  border: none;
+  color: black;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+}
