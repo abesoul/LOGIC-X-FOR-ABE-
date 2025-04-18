@@ -30,8 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <h4>Track ${trackCount}</h4>
       <input type="file" accept="audio/*" data-id="${trackId}" class="file-upload"/>
       <canvas class="waveform" width="240" height="60" data-id="${trackId}"></canvas>
-      <button class="load-file-btn" data-index="${index}">Load File</button>
-<input type="file" class="file-upload" data-index="${index}" accept="audio/*" style="display:none;" />
       <button class="play-btn">▶</button>
       <button class="stop-btn">■</button>
     `;
@@ -231,4 +229,90 @@ function showFXPanel(trackIndex) {
   document.getElementById('close-fx-btn').addEventListener('click', () => {
     fxPanel.classList.add('hidden');
   });
+}
+// Track creation now includes file input
+function createTrack() {
+  const track = {
+    audioElement: new Audio(),
+    gainNode: audioContext.createGain(),
+    panNode: audioContext.createStereoPanner(),
+    reverbNode: audioContext.createConvolver(),
+    delayNode: audioContext.createDelay(),
+    eqNode: audioContext.createBiquadFilter(),
+    muted: false,
+    soloed: false,
+    waveformCanvas: null, // Canvas to draw waveform
+    fileInput: null, // File input element
+  };
+
+  // Connect audio chain as before
+  const sourceNode = audioContext.createMediaElementSource(track.audioElement);
+  sourceNode.connect(track.gainNode);
+
+  track.gainNode.connect(track.panNode);
+  track.panNode.connect(track.reverbNode);
+  track.reverbNode.connect(track.delayNode);
+  track.delayNode.connect(track.eqNode);
+  track.eqNode.connect(audioContext.destination);
+
+  track.reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100);
+  track.delayNode.delayTime.value = 0.3;
+  track.eqNode.type = 'lowshelf';
+  track.eqNode.frequency.value = 1000;
+  track.gainNode.gain.value = 1;
+
+  return track;
+}
+
+// File input event listener
+document.querySelectorAll('.file-upload').forEach(input => {
+  input.addEventListener('change', (e) => {
+    const trackIndex = e.target.dataset.index;
+    const file = e.target.files[0];
+
+    if (file) {
+      const track = tracks[trackIndex];
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        const arrayBuffer = reader.result;
+        audioContext.decodeAudioData(arrayBuffer, (buffer) => {
+          track.audioElement.src = URL.createObjectURL(file);
+          track.audioElement.load();
+
+          // Create waveform canvas
+          createWaveform(track, buffer);
+        });
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+  });
+});
+
+// Create waveform visualization
+function createWaveform(track, audioBuffer) {
+  // Create canvas for waveform visualization
+  track.waveformCanvas = document.createElement('canvas');
+  track.waveformCanvas.width = 240;
+  track.waveformCanvas.height = 60;
+  const ctx = track.waveformCanvas.getContext('2d');
+  
+  const data = audioBuffer.getChannelData(0); // Use left channel for simplicity
+  const width = track.waveformCanvas.width;
+  const height = track.waveformCanvas.height;
+  
+  const step = Math.floor(data.length / width);
+  const amp = height / 2;
+  
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
+  
+  for (let i = 0; i < width; i++) {
+    const min = Math.min(...data.slice(i * step, (i + 1) * step));
+    const max = Math.max(...data.slice(i * step, (i + 1) * step));
+    ctx.fillRect(i, (1 + min) * amp, 1, (max - min) * amp);
+  }
+
+  document.querySelector(`#timeline-tracks`).appendChild(track.waveformCanvas);
 }
