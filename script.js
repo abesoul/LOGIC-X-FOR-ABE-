@@ -7,6 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   let tracks = [];
 
+  // 🧠 Fix: Resume AudioContext on first click
+  document.body.addEventListener('click', () => {
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().then(() => {
+        console.log('🎧 AudioContext resumed!');
+      });
+    }
+  }, { once: true });
+
   addTrackBtn.addEventListener('click', () => {
     const track = createTrack(tracks.length);
     tracks.push(track);
@@ -45,8 +54,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const track = tracks[index];
     track.audioElement.src = fileURL;
     track.audioElement.load();
+
     track.audioElement.onloadeddata = () => {
       console.log(`✅ File loaded for Track ${index + 1}: ${file.name}`);
+
+      // 🔊 Debug: Test audio playback
+      track.audioElement.play().then(() => {
+        console.log(`▶️ Playing Track ${index + 1}`);
+      }).catch(err => {
+        console.warn(`⚠️ Audio playback error: ${err}`);
+      });
+
+      // 🧪 Debug gain
+      console.log(`Gain for Track ${index + 1}:`, track.gainNode.gain.value);
     };
   }
 
@@ -62,20 +82,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const eqNode = audioContext.createBiquadFilter();
     const busNode = audioContext.createGain();
 
-    sourceNode.connect(gainNode);
-    gainNode.connect(panNode);
-    panNode.connect(reverbNode);
-    reverbNode.connect(delayNode);
-    delayNode.connect(eqNode);
-    eqNode.connect(audioContext.destination);
+    // 🔗 Full routing with logging
+    try {
+      sourceNode.connect(gainNode);
+      gainNode.connect(panNode);
+      panNode.connect(reverbNode);
+      reverbNode.connect(delayNode);
+      delayNode.connect(eqNode);
+      eqNode.connect(busNode);
+      busNode.connect(audioContext.destination);
+    } catch (e) {
+      console.error('❌ Error connecting audio nodes:', e);
+    }
 
-    reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100);
+    reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100); // Placeholder
     delayNode.delayTime.value = 0.3;
     eqNode.type = 'lowshelf';
     eqNode.frequency.value = 1000;
-
-    panNode.connect(busNode);
-    busNode.connect(audioContext.destination);
 
     const miniPlayer = document.createElement('div');
     miniPlayer.className = 'mini-player';
@@ -183,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function openFXPanel(index) {
     const track = tracks[index];
     document.getElementById('fx-panel').classList.remove('hidden');
-    document.getElementById('reverb-slider').value = 0.5; // Placeholder
+    document.getElementById('reverb-slider').value = 0.5;
     document.getElementById('delay-slider').value = track.delayNode.delayTime.value;
     document.getElementById('eq-slider').value = track.eqNode.frequency.value;
   }
@@ -192,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fx-panel').classList.add('hidden');
   });
 
-  // Global mini player logic
   document.addEventListener('click', (e) => {
     if (e.target.classList.contains('play-mini-btn')) {
       const index = parseInt(e.target.dataset.index);
@@ -210,6 +232,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Initialize
   updateUI();
 });
