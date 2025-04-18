@@ -1,12 +1,13 @@
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let trackCounter = 0;
 let tracks = [];
+let trackPatterns = [];
 
 document.getElementById("add-track-btn").addEventListener("click", () => {
-  const track = createTrack();
+  const index = trackCounter++;
+  const track = createTrack(index);
   tracks.push(track);
   updateUI();
-  const index = trackCounter++;
   const trackStrip = document.createElement("div");
   trackStrip.className = "track-strip";
   trackStrip.innerHTML = `
@@ -34,7 +35,7 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
   initTrackLogic(index);
 });
 
-function createTrack() {
+function createTrack(index) {
   const track = {
     audioElement: new Audio(),
     gainNode: audioContext.createGain(),
@@ -176,45 +177,16 @@ function showFXPanel(trackIndex) {
 
   document.getElementById('reverb-slider').oninput = () => {
     track.reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100); // Placeholder for real IR
+    track.reverbNode.gain.setValueAtTime(document.getElementById('reverb-slider').value, audioContext.currentTime);
   };
 
-  document.getElementById('delay-slider').oninput = (e) => {
-    track.delayNode.delayTime.value = parseFloat(e.target.value);
+  document.getElementById('delay-slider').oninput = () => {
+    track.delayNode.delayTime.setValueAtTime(document.getElementById('delay-slider').value, audioContext.currentTime);
   };
 
-  document.getElementById('eq-slider').oninput = (e) => {
-    track.eqNode.frequency.value = parseFloat(e.target.value);
+  document.getElementById('eq-slider').oninput = () => {
+    track.eqNode.frequency.setValueAtTime(document.getElementById('eq-slider').value, audioContext.currentTime);
   };
-
-  document.getElementById('close-fx-btn').onclick = () => {
-    fxPanel.classList.add('hidden');
-  };
-}
-
-// Mute / Solo
-function toggleMute(index) {
-  const track = tracks[index];
-  track.muted = !track.muted;
-  if (track.muted) {
-    track.gainNode.disconnect();
-  } else {
-    track.gainNode.connect(track.panNode);
-  }
-  document.querySelector(`.mute-btn[data-index="${index}"]`).classList.toggle('active', track.muted);
-}
-
-function toggleSolo(index) {
-  const soloedTrack = tracks[index];
-  soloedTrack.soloed = !soloedTrack.soloed;
-
-  const anySoloed = tracks.some(t => t.soloed);
-  tracks.forEach((track, i) => {
-    if (anySoloed && !track.soloed) {
-      track.gainNode.disconnect();
-    } else {
-      track.gainNode.connect(track.panNode);
-    }
-  });
 }
 
 function drawWaveform(audioBuffer, ctx) {
@@ -227,8 +199,39 @@ function drawWaveform(audioBuffer, ctx) {
   for (let i = 0; i < width; i++) {
     const min = Math.min(...data.slice(i * step, (i + 1) * step));
     const max = Math.max(...data.slice(i * step, (i + 1) * step));
-    ctx.lineTo(i, (min + 1) * height / 2);
-    ctx.lineTo(i, (max + 1) * height / 2);
+    ctx.moveTo(i, (1 + min) * height / 2);
+    ctx.lineTo(i, (1 + max) * height / 2);
   }
+  ctx.strokeStyle = "#0ff";
   ctx.stroke();
+}
+
+// Smart Beat Suggestion Logic
+document.getElementById('suggest-beat-btn').addEventListener('click', () => {
+  const pattern = generateBeatPattern();
+  trackPatterns.push(pattern);
+  console.log("Suggested Beat Pattern:", pattern);
+  // Add logic to display the pattern on the UI
+});
+
+function generateBeatPattern() {
+  // Example random beat pattern generation
+  return Array.from({ length: 16 }, () => Math.random() > 0.7 ? 1 : 0);
+}
+
+// Mute/Solo Logic
+function toggleMute(index) {
+  const track = tracks[index];
+  track.muted = !track.muted;
+  track.gainNode.gain.value = track.muted ? 0 : 1;
+}
+
+function toggleSolo(index) {
+  const track = tracks[index];
+  track.soloed = !track.soloed;
+  tracks.forEach((t, i) => {
+    if (i !== index) {
+      t.gainNode.gain.value = track.soloed ? 0 : 1;
+    }
+  });
 }
