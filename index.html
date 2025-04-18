@@ -261,6 +261,26 @@
 
       // Initialize UI
       updateUI();
+      
+      // Listen for play/pause clicks on dynamically created mini players
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('play-mini-btn')) {
+    const index = parseInt(e.target.dataset.index);
+    const track = tracks[index];
+    track.audioElement.play();
+    e.target.style.display = 'none';
+    e.target.nextElementSibling.style.display = 'inline-block';
+  }
+
+  if (e.target.classList.contains('pause-mini-btn')) {
+    const index = parseInt(e.target.dataset.index);
+    const track = tracks[index];
+    track.audioElement.pause();
+    e.target.style.display = 'none';
+    e.target.previousElementSibling.style.display = 'inline-block';
+  }
+});
+
     });
   </script>
   <script>
