@@ -1,10 +1,11 @@
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-let trackCounter = 0;
-let tracks = [];
+let tempo = 120; // Default tempo (beats per minute)
 let trackPatterns = [];
+let currentPattern = [];
 let previousPatterns = []; // For Undo functionality
 let nextPatterns = []; // For Redo functionality
-let tempo = 120; // Default tempo (beats per minute)
+let trackCounter = 0;
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let tracks = [];
 
 document.getElementById("add-track-btn").addEventListener("click", () => {
   const index = trackCounter++;
@@ -43,10 +44,8 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
     <div class="fx-controls">
       <label for="reverb-slider-${index}">Reverb</label>
       <input id="reverb-slider-${index}" type="range" min="0" max="1" step="0.01" value="0.2" />
-      
       <label for="delay-slider-${index}">Delay</label>
       <input id="delay-slider-${index}" type="range" min="0" max="1" step="0.01" value="0.1" />
-      
       <label for="eq-slider-${index}">EQ (Treble)</label>
       <input id="eq-slider-${index}" type="range" min="1000" max="10000" value="5000" />
     </div>
@@ -87,17 +86,12 @@ function initTrackLogic(index) {
   const canvas = document.querySelector(`canvas[data-index="${index}"]`);
   const ctx = canvas.getContext("2d");
 
-  const reverbSlider = document.querySelector(`#reverb-slider-${index}`);
-  const delaySlider = document.querySelector(`#delay-slider-${index}`);
-  const eqSlider = document.querySelector(`#eq-slider-${index}`);
   const rhythmicModelSelect = document.querySelector(`#rhythmic-model-${index}`);
+  const customTimeSignatureInput = document.querySelector(`#custom-time-signature-${index}`);
+  const subdivisionInput = document.querySelector(`#subdivision-${index}`);
 
   let audioBuffer = null;
   let sourceNode = null;
-  let reverbNode = null;
-  let delayNode = null;
-  let eqNode = null;
-  let currentPattern = [];
 
   loadBtn.addEventListener("click", () => fileInput.click());
 
@@ -111,20 +105,18 @@ function initTrackLogic(index) {
 
   playBtn.addEventListener("click", () => {
     if (!audioBuffer) return;
-
-    // Create the source node
     sourceNode = audioContext.createBufferSource();
     sourceNode.buffer = audioBuffer;
 
-    // Create and connect effects
+    // Apply effects
     createEffects(index);
 
     // Connect the effects chain
-    sourceNode.connect(reverbNode);
-    reverbNode.connect(delayNode);
-    delayNode.connect(eqNode);
-    eqNode.connect(audioContext.destination);
-
+    sourceNode.connect(track.reverbNode);
+    track.reverbNode.connect(track.delayNode);
+    track.delayNode.connect(track.eqNode);
+    track.eqNode.connect(track.gainNode);
+    track.gainNode.connect(audioContext.destination);
     sourceNode.start();
   });
 
@@ -135,167 +127,178 @@ function initTrackLogic(index) {
     }
   });
 
-  // Smart Beat Suggestion Logic
   suggestBeatBtn.addEventListener("click", () => {
     const selectedModel = rhythmicModelSelect.value;
-    const pattern = generateBeatPattern(selectedModel);
+    const customTimeSignature = customTimeSignatureInput.value || "4/4";
+    const subdivision = subdivisionInput.value || "quarter";
+    const pattern = generateBeatPattern(selectedModel, customTimeSignature, subdivision);
     trackPatterns.push(pattern);
-    previousPatterns.push(currentPattern); // Save current state for undo
-    nextPatterns = []; // Clear redo stack
     currentPattern = pattern;
-    console.log("Suggested Beat Pattern:", pattern);
     applyBeatPatternToTrack(index, pattern);
     visualizeBeatPattern(index, pattern);
   });
 
-  // Undo Button
   undoBtn.addEventListener("click", () => {
-    if (previousPatterns.length > 0) {
-      nextPatterns.push(currentPattern); // Save current state for redo
-      currentPattern = previousPatterns.pop(); // Get last pattern state
+    if (trackPatterns.length > 1) {
+      trackPatterns.pop(); // Remove current pattern
+      currentPattern = trackPatterns[trackPatterns.length - 1]; // Get last pattern
       applyBeatPatternToTrack(index, currentPattern);
       visualizeBeatPattern(index, currentPattern);
     }
   });
 
-  // Redo Button
   redoBtn.addEventListener("click", () => {
     if (nextPatterns.length > 0) {
-      previousPatterns.push(currentPattern); // Save current state for undo
-      currentPattern = nextPatterns.pop(); // Get last pattern state from redo stack
+      currentPattern = nextPatterns.pop(); // Get next pattern
       applyBeatPatternToTrack(index, currentPattern);
       visualizeBeatPattern(index, currentPattern);
     }
   });
 
-  // Tempo Slider (Sync with Playback)
   const tempoSlider = document.getElementById("tempo-slider");
   tempoSlider.addEventListener("input", () => {
     tempo = parseInt(tempoSlider.value);
-    updateTempoOnTracks(tempo);
+    adjustTempoOnTrackPatterns();
   });
 
-  // Tempo Adjustment on Play/Pause
-  function updateTempoOnTracks(newTempo) {
-    trackPatterns.forEach((pattern, idx) => {
-      // Adjust the speed of the beat pattern based on the new tempo
-      const adjustedPattern = adjustPatternTempo(pattern, newTempo);
-      applyBeatPatternToTrack(idx, adjustedPattern);
-      visualizeBeatPattern(idx, adjustedPattern);
+  function adjustTempoOnTrackPatterns() {
+    trackPatterns.forEach((pattern) => {
+      const adjustedPattern = adjustPatternTempo(pattern, tempo);
+      applyBeatPatternToTrack(index, adjustedPattern);
+      visualizeBeatPattern(index, adjustedPattern);
     });
   }
 
-  // Helper to adjust the beat pattern based on tempo
   function adjustPatternTempo(pattern, newTempo) {
-    const adjustedPattern = pattern.map((beat) => {
+    return pattern.map((beat) => {
       return { ...beat, time: beat.time * (tempo / newTempo) };
     });
-    return adjustedPattern;
   }
-}
 
-// Function to generate beat patterns for selected rhythmic models
-function generateBeatPattern(model) {
-  switch (model) {
-    case "syncopated":
-      return generateSyncopatedPattern();
-    case "polyrhythm3:2":
-      return generatePolyrhythmPattern(3, 2);
-    case "polyrhythm5:4":
-      return generatePolyrhythmPattern(5, 4);
-    case "swing":
-      return generateSwingPattern();
-    case "triplet":
-      return generateTripletPattern();
-    case "custom":
-      return generateCustomPattern();
-    default:
-      return generateBasicPattern();
-  }
-}
-
-function generateBasicPattern() {
-  return [
-    { time: 0, type: "hit" },
-    { time: 1, type: "hit" },
-    { time: 2, type: "hit" },
-    { time: 3, type: "hit" }
-  ];
-}
-
-function generateSyncopatedPattern() {
-  return [
-    { time: 0, type: "hit" },
-    { time: 0.5, type: "rest" },
-    { time: 1.5, type: "hit" },
-    { time: 2, type: "hit" },
-    { time: 3, type: "rest" }
-  ];
-}
-
-// Example of Polyrhythm Generator for 3:2 pattern
-function generatePolyrhythmPattern(beat1, beat2) {
-  const pattern = [];
-  let time = 0;
-  while (time < 4) {
-    pattern.push({ time, type: "hit" });
-    time += 1 / beat1;
-  }
-  return pattern;
-}
-
-function generateSwingPattern() {
-  return [
-    { time: 0, type: "hit" },
-    { time: 0.75, type: "hit" },
-    { time: 1.5, type: "hit" },
-    { time: 2.25, type: "hit" },
-    { time: 3, type: "hit" }
-  ];
-}
-
-function generateTripletPattern() {
-  return [
-    { time: 0, type: "hit" },
-    { time: 1 / 3, type: "hit" },
-    { time: 2 / 3, type: "hit" },
-    { time: 1, type: "hit" }
-  ];
-}
-
-function generateCustomPattern() {
-  return [];
-}
-
-function applyBeatPatternToTrack(index, pattern) {
-  const track = tracks[index];
-  trackPatterns[index] = pattern;
-  console.log("Applied Pattern to Track", index, pattern);
-}
-
-function visualizeBeatPattern(index, pattern) {
-  const canvas = document.querySelector(`.waveform[data-index="${index}"]`);
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  pattern.forEach(beat => {
-    if (beat.type === "hit") {
-      ctx.fillRect(beat.time * 60, 0, 5, canvas.height);
+  function generateBeatPattern(model, timeSignature, subdivision) {
+    switch (model) {
+      case "syncopated":
+        return generateSyncopatedPattern();
+      case "polyrhythm3:2":
+        return generatePolyrhythmPattern(3, 2);
+      case "polyrhythm5:4":
+        return generatePolyrhythmPattern(5, 4);
+      case "swing":
+        return generateSwingPattern();
+      case "triplet":
+        return generateTripletPattern();
+      case "custom":
+        return generateCustomPattern(timeSignature, subdivision);
+      default:
+        return generateBasicPattern();
     }
-  });
-}
+  }
 
-function drawWaveform(audioBuffer, ctx, canvas) {
-  const width = canvas.width;
-  const height = canvas.height;
-  const channelData = audioBuffer.getChannelData(0);
-  const step = Math.ceil(channelData.length / width);
-  const amp = height / 2;
-  ctx.clearRect(0, 0, width, height);
-  
-  for (let i = 0; i < width; i++) {
-    const min = Math.min(...channelData.slice(i * step, (i + 1) * step));
-    const max = Math.max(...channelData.slice(i * step, (i + 1) * step));
-    ctx.fillRect(i, (1 + min) * amp, 1, (max - min) * amp);
+  function generateCustomPattern(timeSignature, subdivision) {
+    const [beatsPerMeasure, beatUnit] = timeSignature.split("/").map(Number);
+    const subdivisionsPerBeat = subdivision === "triplet" ? 3 : 1;
+    const pattern = [];
+
+    for (let i = 0; i < beatsPerMeasure * subdivisionsPerBeat; i++) {
+      pattern.push({ time: (i / subdivisionsPerBeat), type: i % 2 === 0 ? "hit" : "rest" });
+    }
+
+    return pattern;
+  }
+
+  function generateBasicPattern() {
+    return [
+      { time: 0, type: "hit" },
+      { time: 1, type: "hit" },
+      { time: 2, type: "hit" },
+      { time: 3, type: "hit" }
+    ];
+  }
+
+  function generateSyncopatedPattern() {
+    return [
+      { time: 0, type: "hit" },
+      { time: 0.5, type: "rest" },
+      { time: 1.5, type: "hit" },
+      { time: 2, type: "rest" },
+      { time: 2.5, type: "hit" },
+      { time: 3, type: "rest" }
+    ];
+  }
+
+  function generatePolyrhythmPattern(top, bottom) {
+    const pattern = [];
+    const patternLength = top * bottom;
+    for (let i = 0; i < patternLength; i++) {
+      const time = i / bottom;
+      pattern.push({ time, type: i % top === 0 ? "hit" : "rest" });
+    }
+    return pattern;
+  }
+
+  function generateSwingPattern() {
+    return [
+      { time: 0, type: "hit" },
+      { time: 1.5, type: "hit" },
+      { time: 2, type: "rest" },
+      { time: 3.5, type: "hit" }
+    ];
+  }
+
+  function generateTripletPattern() {
+    return [
+      { time: 0, type: "hit" },
+      { time: 0.333, type: "rest" },
+      { time: 0.667, type: "hit" },
+      { time: 1, type: "rest" },
+      { time: 1.333, type: "hit" },
+      { time: 1.667, type: "rest" }
+    ];
+  }
+
+  function visualizeBeatPattern(index, pattern) {
+    const canvas = document.querySelector(`canvas[data-index="${index}"]`);
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pattern.forEach((beat) => {
+      if (beat.type === "hit") {
+        ctx.fillStyle = "green";
+        ctx.fillRect(beat.time * canvas.width, 0, 10, canvas.height);
+      }
+    });
+  }
+
+  function applyBeatPatternToTrack(index, pattern) {
+    tracks[index].pattern = pattern;
+  }
+
+  function createEffects(index) {
+    // Reverb effect setup
+    const reverb = document.getElementById(`reverb-slider-${index}`).value;
+    tracks[index].reverbNode.gain.value = reverb;
+
+    // Delay effect setup
+    const delay = document.getElementById(`delay-slider-${index}`).value;
+    tracks[index].delayNode.delayTime.value = delay;
+
+    // EQ effect setup
+    const eqValue = document.getElementById(`eq-slider-${index}`).value;
+    tracks[index].eqNode.frequency.value = eqValue;
+  }
+
+  function drawWaveform(buffer, ctx, canvas) {
+    const data = buffer.getChannelData(0); // Mono waveform (left channel)
+    const width = canvas.width;
+    const height = canvas.height;
+    ctx.clearRect(0, 0, width, height);
+    ctx.beginPath();
+    ctx.moveTo(0, height / 2);
+
+    for (let i = 0; i < width; i++) {
+      const sample = data[Math.floor(i * data.length / width)] * (height / 2);
+      ctx.lineTo(i, (height / 2) - sample);
+    }
+
+    ctx.stroke();
   }
 }
