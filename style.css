@@ -293,6 +293,21 @@ body {
   color: #000;
 }
 
+/* Glow Button */
+.glow-btn {
+  background-color: #444;
+  color: white;
+  border: 1px solid #fff;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.glow-btn:hover {
+  background-color: #1a1a2e;
+  box-shadow: 0 0 10px #44d9e0;
+}
+
 /* Footer Controls */
 .footer-controls {
   position: fixed;
