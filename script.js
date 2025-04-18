@@ -169,3 +169,148 @@ zoomSlider.addEventListener('input', () => {
     if (eqNode) eqNode.frequency.value = parseFloat(e.target.value);
   });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const addTrackBtn = document.getElementById('add-track-btn');
+  const trackList = document.getElementById('track-list');
+  const timelineTracks = document.getElementById('timeline-tracks');
+  const fxPanel = document.getElementById('fx-panel');
+  const closeFxBtn = document.getElementById('close-fx-btn');
+
+  let currentFxTrack = null;
+  let trackCounter = 0;
+  const tracks = [];
+
+  const updatePlaybackState = () => {
+    const soloed = tracks.filter(t => t.solo);
+    tracks.forEach(t => {
+      const isMuted = soloed.length > 0 ? !t.solo : t.mute;
+      if (t.audio) t.audio.muted = isMuted;
+    });
+  };
+
+  const createTrack = () => {
+    const trackId = `track-${++trackCounter}`;
+    const track = {
+      id: trackId,
+      volume: 1,
+      pan: 0,
+      mute: false,
+      solo: false,
+      fx: { reverb: 0.2, delay: 0.1, eq: 5000 },
+      audio: new Audio(),
+    };
+
+    // === MIXER STRIP ===
+    const mixerStrip = document.createElement('div');
+    mixerStrip.className = 'track-strip';
+    mixerStrip.innerHTML = `
+      <h4>Track ${trackCounter}</h4>
+      <label>Volume</label>
+      <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1" />
+      <label>Pan</label>
+      <input type="range" class="pan-slider" min="-1" max="1" step="0.1" value="0" />
+      <div class="mute-solo">
+        <button class="mute-btn">Mute</button>
+        <button class="solo-btn">Solo</button>
+        <button class="fx-btn">🎛 FX</button>
+      </div>
+    `;
+    trackList.appendChild(mixerStrip);
+
+    // === TIMELINE TRACK ===
+    const timelineRow = document.createElement('div');
+    timelineRow.className = 'timeline-row';
+    timelineRow.innerHTML = `
+      <p>Track ${trackCounter}</p>
+      <input type="file" class="audio-upload" accept="audio/*" />
+      <canvas class="waveform" width="300" height="60"></canvas>
+      <button class="play-btn">▶</button>
+      <button class="stop-btn">⏹</button>
+    `;
+    timelineTracks.appendChild(timelineRow);
+
+    // === MIXER CONTROLS ===
+    const volumeSlider = mixerStrip.querySelector('.volume-slider');
+    const panSlider = mixerStrip.querySelector('.pan-slider');
+    const muteBtn = mixerStrip.querySelector('.mute-btn');
+    const soloBtn = mixerStrip.querySelector('.solo-btn');
+    const fxBtn = mixerStrip.querySelector('.fx-btn');
+
+    volumeSlider.addEventListener('input', e => {
+      track.volume = parseFloat(e.target.value);
+      if (track.audio) track.audio.volume = track.volume;
+    });
+
+    panSlider.addEventListener('input', e => {
+      track.pan = parseFloat(e.target.value);
+      // Real pan effect requires Web Audio API, not default Audio()
+    });
+
+    muteBtn.addEventListener('click', () => {
+      track.mute = !track.mute;
+      muteBtn.classList.toggle('active', track.mute);
+      updatePlaybackState();
+    });
+
+    soloBtn.addEventListener('click', () => {
+      track.solo = !track.solo;
+      soloBtn.classList.toggle('active', track.solo);
+      updatePlaybackState();
+    });
+
+    fxBtn.addEventListener('click', () => {
+      currentFxTrack = track;
+      fxPanel.classList.remove('hidden');
+      document.getElementById('reverb-slider').value = track.fx.reverb;
+      document.getElementById('delay-slider').value = track.fx.delay;
+      document.getElementById('eq-slider').value = track.fx.eq;
+    });
+
+    // === AUDIO FILE UPLOAD ===
+    const fileInput = timelineRow.querySelector('.audio-upload');
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      track.audio.src = URL.createObjectURL(file);
+      track.audio.load();
+      track.audio.volume = track.volume;
+      updatePlaybackState();
+    });
+
+    timelineRow.querySelector('.play-btn').addEventListener('click', () => {
+      if (track.audio) track.audio.play();
+    });
+
+    timelineRow.querySelector('.stop-btn').addEventListener('click', () => {
+      if (track.audio) {
+        track.audio.pause();
+        track.audio.currentTime = 0;
+      }
+    });
+
+    tracks.push(track);
+  };
+
+  // Add track on button click
+  addTrackBtn.addEventListener('click', createTrack);
+
+  // Close FX panel
+  closeFxBtn.addEventListener('click', () => {
+    fxPanel.classList.add('hidden');
+    currentFxTrack = null;
+  });
+
+  // FX sliders
+  document.getElementById('reverb-slider').addEventListener('input', e => {
+    if (currentFxTrack) currentFxTrack.fx.reverb = parseFloat(e.target.value);
+  });
+
+  document.getElementById('delay-slider').addEventListener('input', e => {
+    if (currentFxTrack) currentFxTrack.fx.delay = parseFloat(e.target.value);
+  });
+
+  document.getElementById('eq-slider').addEventListener('input', e => {
+    if (currentFxTrack) currentFxTrack.fx.eq = parseFloat(e.target.value);
+  });
+});
