@@ -1,10 +1,28 @@
 export function setupTransport() {
   // Play Button
   const playBtn = document.getElementById('play') || document.getElementById('play-btn');
+  let audioContext;
+  let audioBuffer;
+  let audioSource;
+
   if (playBtn) {
     playBtn.addEventListener('click', () => {
       console.log('▶ Play');
-      // Start playback logic here
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      if (!audioBuffer) {
+        fetch('path_to_your_audio_file.mp3')
+          .then(response => response.arrayBuffer())
+          .then(data => audioContext.decodeAudioData(data))
+          .then(buffer => {
+            audioBuffer = buffer;
+            playAudio();
+          });
+      } else {
+        playAudio();
+      }
     });
   }
 
@@ -13,7 +31,11 @@ export function setupTransport() {
   if (stopBtn) {
     stopBtn.addEventListener('click', () => {
       console.log('⏹ Stop');
-      // Stop playback logic here
+      if (audioSource) {
+        audioSource.stop();
+        audioContext.close();
+        audioContext = null;
+      }
     });
   }
 
@@ -24,5 +46,13 @@ export function setupTransport() {
     tempoSlider.addEventListener('input', (e) => {
       tempoDisplay.textContent = `${e.target.value} BPM`;
     });
+  }
+
+  // Play Audio Function
+  function playAudio() {
+    audioSource = audioContext.createBufferSource();
+    audioSource.buffer = audioBuffer;
+    audioSource.connect(audioContext.destination);
+    audioSource.start(0);
   }
 }
