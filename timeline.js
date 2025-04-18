@@ -81,3 +81,13 @@ export function setupTimeline(trackCount = 4, beatsPerTrack = 16) {
     });
   }
 }
+
+export function renderTimelineGrid() {
+  // This function is now combined with the setupTimeline logic and is no longer needed separately.
+  // The timeline grid is rendered in setupTimeline.
+}
+
+export function enableBeatSelection() {
+  // The beat selection functionality is now integrated with setupTimeline via the dragging and selection box.
+  // You can add more customizations if necessary.
+}
