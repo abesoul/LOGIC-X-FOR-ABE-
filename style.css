@@ -1,76 +1,286 @@
-// ====== NeonDAW Final script.js ======
+/* Global Reset and Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
-let tempo = 120;
-const tempoSlider = document.getElementById('tempo-slider');
-const tempoDisplay = document.getElementById('tempo-display');
-const timecode = document.getElementById('timecode');
-const playBtn = document.getElementById('play');
-const stopBtn = document.getElementById('stop');
-const addTrackBtn = document.getElementById('add-track-btn');
-const timelineTracks = document.getElementById('timeline-tracks');
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #0f0f1f, #1c1c2b);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-x: hidden;
+}
 
-// Update tempo
-tempoSlider.addEventListener('input', () => {
-  tempo = tempoSlider.value;
-  tempoDisplay.textContent = tempo + ' BPM';
-});
+/* App Container */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
 
-// Play/Stop simulation
-let isPlaying = false;
-let playbackInterval;
-playBtn.addEventListener('click', () => {
-  if (!isPlaying) {
-    isPlaying = true;
-    let seconds = 0;
-    playbackInterval = setInterval(() => {
-      seconds++;
-      timecode.textContent = new Date(seconds * 1000).toISOString().substr(11, 8);
-    }, 1000);
-  }
-});
-stopBtn.addEventListener('click', () => {
-  isPlaying = false;
-  clearInterval(playbackInterval);
-  timecode.textContent = '00:00:00';
-});
+#transport,
+#timeline,
+#mixer,
+#tracks {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
 
-// Add track
-let trackCount = 0;
-addTrackBtn.addEventListener('click', () => {
-  trackCount++;
-  const trackRow = document.createElement('div');
-  trackRow.className = 'track-row glass';
-  trackRow.style.marginBottom = '10px';
-  trackRow.innerHTML = `<strong>Track ${trackCount}</strong>`;
-  timelineTracks.appendChild(trackRow);
-});
+/* Glassmorphism Panels */
+.glass, button, .track, .sample {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  margin: 10px 0;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+}
 
-// Zoom slider
-document.getElementById('zoom-slider').addEventListener('input', (e) => {
-  timelineTracks.style.transform = `scale(${e.target.value})`;
-});
+/* Header: Transport Controls */
+#top-bar, .top-bar {
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 10;
+  box-shadow: 0 0 20px #00f0ff;
+}
 
-// FX Toggle (Placeholder)
-document.getElementById('fx-toggle-btn').addEventListener('click', () => {
-  alert('FX panel toggle not implemented yet.');
-});
+.transport-controls button {
+  background: #111;
+  border: none;
+  margin-left: 10px;
+  color: #0ff;
+  font-size: 1.1rem;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
 
-// Save Project (Placeholder)
-document.getElementById('save-project').addEventListener('click', () => {
-  alert('Project saved to localStorage (simulated).');
-});
+.transport-controls button:hover {
+  background: #00f0ff;
+  color: #000;
+  box-shadow: 0 0 15px #0ff;
+}
 
-// Drag & Drop
-const dropzone = document.getElementById('timeline-dropzone');
-dropzone.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  dropzone.style.background = '#444';
-});
-dropzone.addEventListener('dragleave', () => {
-  dropzone.style.background = '';
-});
-dropzone.addEventListener('drop', (e) => {
-  e.preventDefault();
-  dropzone.style.background = '';
-  alert('Audio file dropped (handling to be implemented).');
-});
+/* Sidebar */
+#left-sidebar {
+  background-color: rgba(0, 0, 0, 0.6);
+  position: fixed;
+  left: 0;
+  top: 60px;
+  bottom: 0;
+  width: 250px;
+  color: white;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(8px);
+}
+
+#track-list {
+  margin-bottom: 20px;
+}
+
+.sample {
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.sample:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Main Area */
+#main-area {
+  margin-left: 260px;
+  margin-top: 80px;
+  padding: 20px;
+}
+
+#timeline {
+  margin-bottom: 20px;
+}
+
+.track {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #0ff3;
+}
+
+#timeline h2, #mixer h2 {
+  color: #00f0ff;
+}
+
+/* Mixer Section */
+#mix {
+  display: flex;
+  flex-direction: column;
+  margin-top: 30px;
+  border-top: 2px solid #00f0ff;
+  padding-top: 10px;
+}
+
+/* Utility */
+.hidden {
+  display: none;
+}
+
+/* Neon Buttons */
+button:hover {
+  box-shadow: 0 0 15px #0ff;
+  color: #0ff;
+}
+
+/* Timeline Grid */
+#timeline-grid {
+  position: relative;
+  height: 200px;
+  border: 1px solid #555;
+  margin-top: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+}
+
+.beat {
+  width: 30px;
+  height: 100%;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease, transform 0.3s ease;
+  position: relative;
+  cursor: grab;
+  z-index: 1;
+}
+
+.beat.selected {
+  border: 2px solid #0ff;
+  background-color: rgba(0, 255, 255, 0.3);
+}
+
+.beat.dragging {
+  opacity: 0.8;
+}
+
+.selection-box {
+  position: absolute;
+  border: 1px dashed #0ff;
+  background-color: rgba(0, 255, 255, 0.2);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* FX Panel */
+#fx-panel {
+  position: fixed;
+  top: 80px;
+  right: 40px;
+  width: 250px;
+  padding: 20px;
+  z-index: 10;
+  box-shadow: 0 0 25px #0ff;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+#fx-panel h3 {
+  color: #00f0ff;
+  margin-bottom: 10px;
+}
+
+#fx-panel label {
+  display: block;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+#fx-panel input[type="range"] {
+  width: 100%;
+}
+
+#fx-panel button {
+  margin-top: 15px;
+  width: 100%;
+  background: #00f0ff;
+  border: none;
+  padding: 0.6rem;
+  color: black;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#fx-panel button:hover {
+  background: #0ff;
+  color: #000;
+}
+
+/* Action Buttons */
+#add-track-btn,
+#save-project,
+#load-project {
+  background: #00f0ff;
+  border: none;
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#add-track-btn:hover,
+#save-project:hover,
+#load-project:hover {
+  background: #0ff;
+  color: #000;
+}
+
+/* Muting and Solo Styles */
+.mute-btn, .solo-btn, .fx-btn {
+  flex: 1;
+  background: #222;
+  border: 2px solid #0ff4;
+  color: #0ff;
+  padding: 0.4rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.mute-btn:hover, .solo-btn:hover, .fx-btn:hover {
+  background: #0ff2;
+}
+
+.mute-btn.active {
+  background: crimson;
+  color: white;
+  border-color: crimson;
+}
+
+.solo-btn.active {
+  background: limegreen;
+  color: white;
+  border-color: limegreen;
+}
