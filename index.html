@@ -263,5 +263,127 @@
       updateUI();
     });
   </script>
+  <script>
+  let audioCtx;
+  const tracks = [];
+
+  document.addEventListener('DOMContentLoaded', () => {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    document.getElementById('add-track-btn').addEventListener('click', addTrackRow);
+
+    function addTrackRow() {
+      const index = tracks.length;
+      const container = document.getElementById('track-container');
+      const row = document.createElement('div');
+      row.className = 'track-row';
+      row.innerHTML = `
+        <input type="file" accept="audio/*" class="file-input" data-index="${index}">
+        <button class="fx-btn" data-index="${index}">FX</button>
+        <input type="range" min="0" max="2" step="0.01" value="1" class="volume-slider" data-index="${index}">
+        <input type="range" min="-1" max="1" step="0.01" value="0" class="pan-slider" data-index="${index}">
+        <button class="mute-btn" data-index="${index}">Mute</button>
+        <button class="solo-btn" data-index="${index}">Solo</button>
+        <button class="play-btn" data-index="${index}">▶️</button>
+        <span class="key-label">Key: ${String.fromCharCode(65 + index)}</span>
+      `;
+      container.appendChild(row);
+
+      const gainNode = audioCtx.createGain();
+      const panNode = audioCtx.createStereoPanner();
+      const reverbNode = audioCtx.createGain();
+      const delayNode = audioCtx.createDelay();
+      const eqNode = audioCtx.createBiquadFilter();
+
+      gainNode.connect(panNode).connect(audioCtx.destination);
+
+      tracks.push({
+        buffer: null,
+        playing: false,
+        muted: false,
+        soloed: false,
+        gainNode,
+        panNode,
+        reverbNode,
+        delayNode,
+        eqNode
+      });
+
+      document.querySelector(`.file-input[data-index="${index}"]`).addEventListener('change', (e) =>
+        handleAudioFile(e.target.files[0], index)
+      );
+
+      document.querySelector(`.volume-slider[data-index="${index}"]`).addEventListener('input', (e) =>
+        tracks[index].gainNode.gain.setValueAtTime(parseFloat(e.target.value), audioCtx.currentTime)
+      );
+
+      document.querySelector(`.pan-slider[data-index="${index}"]`).addEventListener('input', (e) =>
+        tracks[index].panNode.pan.setValueAtTime(parseFloat(e.target.value), audioCtx.currentTime)
+      );
+
+      document.querySelector(`.mute-btn[data-index="${index}"]`).addEventListener('click', (e) => toggleMute(index));
+      document.querySelector(`.solo-btn[data-index="${index}"]`).addEventListener('click', (e) => toggleSolo(index));
+      document.querySelector(`.play-btn[data-index="${index}"]`).addEventListener('click', () => playPauseSample(index));
+    }
+
+    async function handleAudioFile(file, index) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const arrayBuffer = e.target.result;
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        tracks[index].buffer = audioBuffer;
+        console.log(`Track ${index} loaded.`);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function playPauseSample(index) {
+      const track = tracks[index];
+      if (!track.buffer) return;
+
+      if (track.playing) {
+        track.source?.stop();
+        track.playing = false;
+      } else {
+        const source = audioCtx.createBufferSource();
+        source.buffer = track.buffer;
+        source.connect(track.gainNode);
+        source.start();
+        track.source = source;
+        track.playing = true;
+        source.onended = () => (track.playing = false);
+      }
+    }
+
+    function toggleMute(index) {
+      const track = tracks[index];
+      track.muted = !track.muted;
+      track.gainNode.gain.value = track.muted ? 0 : 1;
+    }
+
+    function toggleSolo(index) {
+      const track = tracks[index];
+      track.soloed = !track.soloed;
+      if (track.soloed) {
+        tracks.forEach((t, i) => {
+          if (i !== index) t.gainNode.gain.value = 0;
+        });
+      } else {
+        tracks.forEach((t) => t.gainNode.gain.value = 1);
+      }
+    }
+
+    // 🔑 Key mapping support: A, B, C, D... for up to 26 tracks
+    document.addEventListener('keydown', (e) => {
+      const keyIndex = e.key.toUpperCase().charCodeAt(0) - 65;
+      if (keyIndex >= 0 && keyIndex < tracks.length) {
+        playPauseSample(keyIndex);
+      }
+    });
+  });
+</script>
+<button class="play-btn" data-index="${index}">▶️</button>
+<span class="key-label">Key: ${String.fromCharCode(65 + index)}</span>
+
 </body>
 </html>
