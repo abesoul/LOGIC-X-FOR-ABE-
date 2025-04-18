@@ -4,6 +4,61 @@ let currentSource;
 let reverbNode, delayNode, eqNode;
 let fxPanel = document.getElementById('fx-panel');
 
+let currentFXTrack = null;
+const fxPanel = document.getElementById('fx-panel');
+const closeFxBtn = document.getElementById('close-fx-btn');
+
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('add-effect-btn')) {
+    currentFXTrack = e.target.closest('.track-strip') || e.target.closest('.track');
+    fxPanel.classList.remove('hidden');
+  }
+});
+
+closeFxBtn.addEventListener('click', () => {
+  fxPanel.classList.add('hidden');
+  currentFXTrack = null;
+});
+
+document.getElementById('save-project').addEventListener('click', () => {
+  const data = [];
+
+  document.querySelectorAll('.track-strip').forEach((track, i) => {
+    const volume = track.querySelector('input[type="range"]').value;
+    data.push({ name: `Track ${i + 1}`, volume });
+  });
+
+  localStorage.setItem('neondaw_project', JSON.stringify(data));
+  alert('✅ Project Saved!');
+});
+
+document.getElementById('load-project').addEventListener('click', () => {
+  const data = JSON.parse(localStorage.getItem('neondaw_project') || '[]');
+  const trackList = document.getElementById('track-list');
+  trackList.innerHTML = '';
+  const timelineTracks = document.getElementById('timeline-tracks');
+  timelineTracks.innerHTML = '';
+
+  data.forEach((trackData, i) => {
+    const track = document.createElement('div');
+    track.className = 'track-strip';
+    track.innerHTML = `
+      <h4>${trackData.name}</h4>
+      <input type="range" min="0" max="100" value="${trackData.volume}" />
+      <button class="add-effect-btn">🎛 FX</button>
+    `;
+    trackList.appendChild(track);
+
+    const timelineRow = document.createElement('div');
+    timelineRow.className = 'timeline-row';
+    timelineRow.innerHTML = `<p>${trackData.name}</p>`;
+    timelineTracks.appendChild(timelineRow);
+  });
+
+  alert('📂 Project Loaded!');
+});
+
+
 document.addEventListener('DOMContentLoaded', () => {
   const addTrackBtn = document.getElementById('add-track-btn');
   const trackList = document.getElementById('track-list');
@@ -27,6 +82,15 @@ document.addEventListener('DOMContentLoaded', () => {
     timelineRow.innerHTML = `<p>Track ${trackList.children.length}</p>`;
     timelineTracks.appendChild(timelineRow);
 
+const zoomSlider = document.getElementById('zoom-slider');
+zoomSlider.addEventListener('input', () => {
+  const scale = zoomSlider.value;
+  document.querySelectorAll('.waveform').forEach(canvas => {
+    canvas.style.transform = `scaleX(${scale})`;
+  });
+});
+
+    
     // FX button logic
     track.querySelector('.add-effect-btn').addEventListener('click', () => {
       fxPanel.classList.remove('hidden');
