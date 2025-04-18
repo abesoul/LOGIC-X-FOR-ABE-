@@ -98,6 +98,10 @@ function updateUI() {
     btn.addEventListener('click', e => toggleSolo(e.target.dataset.index));
   });
 
+  document.getElementById('generate-ai-beat').addEventListener('click', () => {
+  alert("🧠 AI Beat Suggestion Coming Soon!\nWe'll add kick-snare-hat logic!");
+});
+
   document.querySelectorAll('.fx-btn').forEach(btn => {
     btn.addEventListener('click', e => showFXPanel(e.target.dataset.index));
   });
