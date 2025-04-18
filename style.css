@@ -1,399 +1,114 @@
-/* Global Reset and Base Styles */
+/* ====== NeonDAW Final style.css ====== */
+
+/* Reset & Base */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-
 body {
-  margin: 0;
-  padding: 0;
-  background: linear-gradient(135deg, #0f0f1f, #1c1c2b);
-  color: white;
-  display: flex;
-  flex-direction: column;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  color: #fff;
   height: 100vh;
-  overflow-x: hidden;
+  overflow: hidden;
+}
+h1, h2 {
+  margin-bottom: 10px;
 }
 
-/* App Container */
-#app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-#transport,
-#timeline,
-#mixer,
-#tracks {
-  padding: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Glassmorphism Panels */
-.glass, button, .track, .sample {
-  background: rgba(255, 255, 255, 0.05);
+/* Glass Effect Panel */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 10px;
-  margin: 10px 0;
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
 }
 
-/* Header: Transport Controls */
-#top-bar, .top-bar {
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  position: fixed;
-  top: 0;
-  width: 100%;
-  z-index: 10;
-  box-shadow: 0 0 20px #00f0ff;
-}
-
-.transport-controls button {
-  background: #111;
+/* Glow Buttons */
+.glow-btn {
+  padding: 10px 20px;
   border: none;
-  margin-left: 10px;
+  background: #1f1c2c;
   color: #0ff;
-  font-size: 1.1rem;
-  padding: 10px 15px;
-  border-radius: 8px;
+  text-shadow: 0 0 5px #0ff;
+  border-radius: 5px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
-
-.transport-controls button:hover {
-  background: #00f0ff;
-  color: #000;
+.glow-btn:hover {
+  background: #302b63;
   box-shadow: 0 0 15px #0ff;
+}
+
+/* Top Bar */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 30px;
+  background: rgba(0, 0, 0, 0.4);
+}
+.logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #0ff;
+  text-shadow: 0 0 10px #0ff;
+}
+.transport-controls button {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  background: #444;
+  color: #fff;
+  cursor: pointer;
+}
+.transport-controls button:hover {
+  background: #0ff;
+  color: #000;
+}
+
+/* Main Editor Grid */
+.main-editor {
+  display: flex;
+  height: calc(100vh - 80px);
 }
 
 /* Sidebar */
 #left-sidebar {
-  background-color: rgba(0, 0, 0, 0.6);
-  position: fixed;
-  left: 0;
-  top: 60px;
-  bottom: 0;
   width: 250px;
-  color: white;
   padding: 20px;
   display: flex;
   flex-direction: column;
-  backdrop-filter: blur(8px);
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.05);
 }
 
-#track-list {
-  margin-bottom: 20px;
-}
-
-.sample {
-  background-color: rgba(255, 255, 255, 0.1);
-  margin: 5px 0;
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.sample:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Main Area */
-#main-area {
-  margin-left: 260px;
-  margin-top: 80px;
+/* Timeline Panel */
+#timeline-panel {
+  flex: 1;
   padding: 20px;
-}
-
-#timeline {
-  margin-bottom: 20px;
-}
-
-.track {
-  background-color: rgba(255, 255, 255, 0.05);
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px #0ff3;
-}
-
-#timeline h2, #mixer h2 {
-  color: #00f0ff;
-}
-
-/* Mixer Section */
-#mix {
   display: flex;
   flex-direction: column;
-  margin-top: 30px;
-  border-top: 2px solid #00f0ff;
-  padding-top: 10px;
 }
-
-/* Utility */
-.hidden {
-  display: none;
-}
-
-/* Neon Buttons */
-button:hover {
-  box-shadow: 0 0 15px #0ff;
-  color: #0ff;
-}
-
-/* Timeline Grid */
-#timeline-grid {
-  position: relative;
-  height: 200px;
-  border: 1px solid #555;
-  margin-top: 10px;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.2);
-  display: flex;
-  align-items: center;
-}
-
-.beat {
-  width: 30px;
-  height: 100%;
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.1);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background 0.2s ease, transform 0.3s ease;
-  position: relative;
-  cursor: grab;
-  z-index: 1;
-}
-
-.beat.selected {
-  border: 2px solid #0ff;
-  background-color: rgba(0, 255, 255, 0.3);
-}
-
-.beat.dragging {
-  opacity: 0.8;
-}
-
-.selection-box {
-  position: absolute;
-  border: 1px dashed #0ff;
-  background-color: rgba(0, 255, 255, 0.2);
-  pointer-events: none;
-  z-index: 1000;
-}
-
-/* FX Panel */
-#fx-panel {
-  position: fixed;
-  top: 80px;
-  right: 40px;
-  width: 250px;
+#timeline-dropzone {
+  border: 2px dashed #888;
   padding: 20px;
-  z-index: 10;
-  box-shadow: 0 0 25px #0ff;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
-
-#fx-panel h3 {
-  color: #00f0ff;
+  text-align: center;
   margin-bottom: 10px;
 }
-
-#fx-panel label {
-  display: block;
-  margin-top: 10px;
-  font-size: 0.9rem;
-}
-
-#fx-panel input[type="range"] {
-  width: 100%;
-}
-
-#fx-panel button {
-  margin-top: 15px;
-  width: 100%;
-  background: #00f0ff;
-  border: none;
-  padding: 0.6rem;
-  color: black;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-#fx-panel button:hover {
-  background: #0ff;
-  color: #000;
-}
-
-/* Action Buttons */
-#add-track-btn,
-#save-project,
-#load-project {
-  background: #00f0ff;
-  border: none;
-  padding: 0.8rem 1.2rem;
-  border-radius: 12px;
-  color: black;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-#add-track-btn:hover,
-#save-project:hover,
-#load-project:hover {
-  background: #0ff;
-  color: #000;
-}
-
-/* Muting and Solo Styles */
-.mute-btn, .solo-btn, .fx-btn {
+#timeline-grid {
   flex: 1;
-  background: #222;
-  border: 2px solid #0ff4;
-  color: #0ff;
-  padding: 0.4rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.2s;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  overflow-y: auto;
+  padding: 10px;
 }
 
-.mute-btn:hover, .solo-btn:hover, .fx-btn:hover {
-  background: #0ff2;
-}
-
-.mute-btn.active {
-  background: crimson;
-  color: white;
-  border-color: crimson;
-}
-
-.solo-btn.active {
-  background: limegreen;
-  color: white;
-  border-color: limegreen;
-}
-/* === Login Page Styles === */
-.login-body {
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-@keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-.login-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-}
-
-.login-box {
-    padding: 40px;
-    width: 100%;
-    max-width: 400px;
-    border-radius: 15px;
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
-}
-
-.neon-title {
-    text-align: center;
-    font-size: 2.5rem;
-    color: #0ff;
-    margin-bottom: 30px;
-    letter-spacing: 2px;
-    text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
-}
-
-.login-box label {
-    display: block;
-    margin-bottom: 5px;
-    margin-top: 15px;
-    font-size: 0.95rem;
-    color: #ccc;
-}
-
-.login-box input {
-    width: 100%;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    font-size: 1rem;
-    transition: background 0.3s ease;
-}
-
-.login-box input:focus {
-    outline: none;
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.neon-button {
-    margin-top: 25px;
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    background: #0ff;
-    color: #000;
-    font-weight: bold;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: 0.3s ease;
-    box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
-}
-
-.neon-button:hover {
-    background: #00f0f0;
-    box-shadow: 0 0 20px #00f0f0, 0 0 30px #00f0f0;
-}
-
-.register-link {
-    margin-top: 20px;
-    text-align: center;
-    font-size: 0.9rem;
-    color: #ccc;
-}
-
-.register-link a {
-    color: #0ff;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.register-link a:hover {
-    text-decoration: underline;
-}
-/* Optional: Add subtle animations for inputs */
-.login-box input {
-    transition: all 0.25s ease;
-}
-.login-box input:focus {
-    box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+/* Zoom */
+#zoom-slider {
+  width: 200px;
+  margin: 10px 0;
 }
