@@ -17,10 +17,22 @@ body {
 
 .track {
     margin-bottom: 20px;
+    background-color: #34495e;
+    padding: 15px;
+    border-radius: 10px;
 }
 
-.mixer input {
+.track h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+input[type="number"], input[type="file"], button {
     margin: 5px 0;
+}
+
+input[type="file"] {
+    padding: 5px;
 }
 
 button {
@@ -35,6 +47,23 @@ button:hover {
     background-color: #2980b9;
 }
 
+button:active {
+    background-color: #2980b9;
+}
+
+#effects-container {
+    margin-top: 30px;
+}
+
+#effects-container button {
+    margin-top: 10px;
+}
+
+.mixer input {
+    margin: 5px 0;
+}
+
+/* Login and Register containers */
 #login-container, #register-container {
     width: 300px;
     margin: 100px auto;
