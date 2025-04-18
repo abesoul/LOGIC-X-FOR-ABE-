@@ -56,6 +56,15 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
 
   // Initialize track functionality
   initTrackLogic(index);
+
+  // Initialize zoom controls
+  initZoomControls(index);
+
+  // Initialize advanced beat editing
+  enableAdvancedBeatEditing(index);
+
+  // Display subdivisions
+  displaySubdivisions(index);
 });
 
 function createTrack(index) {
@@ -213,24 +222,27 @@ function initTrackLogic(index) {
       { time: 0, type: "hit" },
       { time: 1, type: "hit" },
       { time: 2, type: "hit" },
-      { time: 3, type: "hit" }
+      { time: 3, type: "hit" },
     ];
   }
 
   function generateSyncopatedPattern() {
     return [
       { time: 0, type: "hit" },
-      { time: 0.5, type: "hit" },
       { time: 1.5, type: "hit" },
-      { time: 2.5, type: "hit" }
+      { time: 2.5, type: "hit" },
     ];
   }
 
-  function generatePolyrhythmPattern(top, bottom) {
+  function generatePolyrhythmPattern(a, b) {
     const pattern = [];
-    for (let i = 0; i < top; i++) {
-      pattern.push({ time: (i * (bottom / top)), type: "hit" });
+    let time = 0;
+
+    while (time < 4) {
+      pattern.push({ time: time, type: "hit" });
+      time += 4 / a;
     }
+
     return pattern;
   }
 
@@ -239,69 +251,93 @@ function initTrackLogic(index) {
       { time: 0, type: "hit" },
       { time: 0.75, type: "hit" },
       { time: 1.5, type: "hit" },
-      { time: 2.25, type: "hit" }
+      { time: 2.25, type: "hit" },
     ];
   }
 
   function generateTripletPattern() {
     return [
       { time: 0, type: "hit" },
-      { time: 0.33, type: "hit" },
-      { time: 0.67, type: "hit" },
-      { time: 1, type: "hit" }
+      { time: 0.6667, type: "hit" },
+      { time: 1.3333, type: "hit" },
     ];
   }
 
   function applyBeatPatternToTrack(index, pattern) {
-    const track = tracks[index];
-    trackPatterns[index] = pattern;
-    nextPatterns = []; // Clear redo stack
+    // Apply pattern to track
+    tracks[index].pattern = pattern;
   }
 
   function visualizeBeatPattern(index, pattern) {
-    const track = tracks[index];
-    const canvas = document.querySelector(`canvas[data-index="${index}"]`);
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    pattern.forEach((beat) => {
-      if (beat.type === "hit") {
-        ctx.fillStyle = "#00FF00";
-        ctx.fillRect(beat.time * canvas.width / subdivisionLevel, 0, 10, canvas.height);
-      }
-    });
+    // Visualize pattern on track strip
+    const trackStrip = document.querySelector(`.track-strip[data-index="${index}"]`);
+    const patternDiv = document.createElement("div");
+    patternDiv.classList.add("pattern");
+    patternDiv.innerHTML = pattern.map((beat) => `<div class="beat ${beat.type}" style="width:${(100 / pattern.length)}%"></div>`).join("");
+    trackStrip.appendChild(patternDiv);
   }
 
-  function createEffects(index) {
-    const track = tracks[index];
-
-    // Reverb
-    const reverbSlider = document.getElementById(`reverb-slider-${index}`);
-    track.reverbNode.gain.value = reverbSlider.value;
-
-    // Delay
-    const delaySlider = document.getElementById(`delay-slider-${index}`);
-    track.delayNode.delayTime.value = delaySlider.value;
-
-    // EQ
-    const eqSlider = document.getElementById(`eq-slider-${index}`);
-    track.eqNode.frequency.value = eqSlider.value;
-  }
-
-  function drawWaveform(buffer, ctx, canvas) {
-    const channelData = buffer.getChannelData(0);
-    const step = Math.ceil(channelData.length / canvas.width);
-    const amp = canvas.height / 2;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < canvas.width; i++) {
+  function drawWaveform(audioBuffer, ctx, canvas) {
+    const channelData = audioBuffer.getChannelData(0);
+    const width = canvas.width;
+    const height = canvas.height;
+    const step = Math.ceil(channelData.length / width);
+    const amplitude = 1;
+    ctx.clearRect(0, 0, width, height);
+    ctx.beginPath();
+    for (let i = 0; i < width; i++) {
       const min = Math.min(...channelData.slice(i * step, (i + 1) * step));
       const max = Math.max(...channelData.slice(i * step, (i + 1) * step));
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(i, (1 + min) * amp, 1, (max - min) * amp);
+      const yMin = (min + 1) * 0.5 * height;
+      const yMax = (max + 1) * 0.5 * height;
+      ctx.moveTo(i, yMin);
+      ctx.lineTo(i, yMax);
     }
+    ctx.stroke();
   }
 }
 
-function updateUI() {
-  document.getElementById("track-list").innerHTML = "";
-  document.getElementById("timeline-tracks").innerHTML = "";
+function initZoomControls(index) {
+  const zoomInBtn = document.querySelector(`#zoom-in-btn-${index}`);
+  const zoomOutBtn = document.querySelector(`#zoom-out-btn-${index}`);
+  
+  zoomInBtn.addEventListener("click", () => {
+    if (zoomLevel < 2) zoomLevel += 0.1;
+    updateTimelineZoom(index);
+  });
+
+  zoomOutBtn.addEventListener("click", () => {
+    if (zoomLevel > 0.5) zoomLevel -= 0.1;
+    updateTimelineZoom(index);
+  });
+
+  function updateTimelineZoom(index) {
+    const trackTimeline = document.querySelector(`.timeline-row[data-index="${index}"]`);
+    trackTimeline.style.transform = `scaleX(${zoomLevel})`;
+  }
 }
+
+function enableAdvancedBeatEditing(index) {
+  const track = tracks[index];
+  const fxBtn = document.querySelector(`.fx-btn[data-index="${index}"]`);
+  const fxControls = document.querySelector(`.fx-controls[data-index="${index}"]`);
+  fxBtn.addEventListener("click", () => {
+    fxControls.classList.toggle("show");
+  });
+}
+
+function displaySubdivisions(index) {
+  const subdivisions = document.createElement("div");
+  subdivisions.className = "subdivisions";
+  subdivisions.innerHTML = `
+    <label for="subdivision-${index}">Subdivision</label>
+    <select id="subdivision-${index}">
+      <option value="quarter">Quarter</option>
+      <option value="eighth">Eighth</option>
+      <option value="sixteenth">Sixteenth</option>
+      <option value="triplet">Triplet</option>
+    </select>
+  `;
+  document.querySelector(`#track-${index}`).appendChild(subdivisions);
+}
+
