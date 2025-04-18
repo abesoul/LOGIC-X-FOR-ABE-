@@ -2,8 +2,14 @@ const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let tracks = [];
 let currentFXTrack = null;
 
-// Create a Track (with audio processing chain)
+document.getElementById('add-track-btn').addEventListener('click', () => {
+  const track = createTrack();
+  tracks.push(track);
+  updateUI();
+});
+
 function createTrack() {
+  // Audio Nodes
   const track = {
     audioElement: new Audio(),
     gainNode: audioContext.createGain(),
@@ -37,14 +43,6 @@ function createTrack() {
   return track;
 }
 
-// Add Track Button
-document.getElementById('add-track-btn').addEventListener('click', () => {
-  const track = createTrack();
-  tracks.push(track);
-  updateUI();
-});
-
-// Update UI
 function updateUI() {
   const trackList = document.getElementById('track-list');
   const timelineTracks = document.getElementById('timeline-tracks');
@@ -77,7 +75,7 @@ function updateUI() {
     timelineTracks.appendChild(timelineRow);
   });
 
-  // Event Binding
+  // Bind Events
   document.querySelectorAll('.volume').forEach(slider => {
     slider.addEventListener('input', e => {
       tracks[e.target.dataset.index].gainNode.gain.value = e.target.value;
@@ -97,10 +95,6 @@ function updateUI() {
   document.querySelectorAll('.solo-btn').forEach(btn => {
     btn.addEventListener('click', e => toggleSolo(e.target.dataset.index));
   });
-
-  document.getElementById('generate-ai-beat').addEventListener('click', () => {
-  alert("🧠 AI Beat Suggestion Coming Soon!\nWe'll add kick-snare-hat logic!");
-});
 
   document.querySelectorAll('.fx-btn').forEach(btn => {
     btn.addEventListener('click', e => showFXPanel(e.target.dataset.index));
@@ -129,7 +123,6 @@ function updateUI() {
 document.getElementById('play-btn').addEventListener('click', () => {
   tracks.forEach((track, index) => {
     if (!track.fileBuffer) return;
-
     const source = audioContext.createBufferSource();
     source.buffer = track.fileBuffer;
     source.connect(track.gainNode);
@@ -144,7 +137,7 @@ document.getElementById('stop-btn').addEventListener('click', () => {
   });
 });
 
-// FX Panel Controls
+// FX Panel
 function showFXPanel(trackIndex) {
   const track = tracks[trackIndex];
   const fxPanel = document.getElementById('fx-panel');
@@ -155,9 +148,8 @@ function showFXPanel(trackIndex) {
 
   fxPanel.classList.remove('hidden');
 
-  document.getElementById('reverb-slider').oninput = (e) => {
-    // Placeholder logic for IR reverb slider
-    track.reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100);
+  document.getElementById('reverb-slider').oninput = () => {
+    track.reverbNode.buffer = audioContext.createBuffer(2, 44100, 44100); // Placeholder for real IR
   };
 
   document.getElementById('delay-slider').oninput = (e) => {
@@ -173,7 +165,7 @@ function showFXPanel(trackIndex) {
   };
 }
 
-// Mute / Solo Logic
+// Mute / Solo
 function toggleMute(index) {
   const track = tracks[index];
   track.muted = !track.muted;
@@ -189,9 +181,9 @@ function toggleSolo(index) {
   const soloedTrack = tracks[index];
   soloedTrack.soloed = !soloedTrack.soloed;
 
+  const anySoloed = tracks.some(t => t.soloed);
   tracks.forEach((track, i) => {
-    const isSolo = tracks.some(t => t.soloed);
-    if (isSolo && !track.soloed) {
+    if (anySoloed && !track.soloed) {
       track.gainNode.disconnect();
     } else if (!track.muted) {
       track.gainNode.connect(track.panNode);
@@ -200,3 +192,8 @@ function toggleSolo(index) {
 
   document.querySelector(`.solo-btn[data-index="${index}"]`).classList.toggle('active', soloedTrack.soloed);
 }
+
+// AI Beat Placeholder
+document.getElementById('generate-ai-beat').addEventListener('click', () => {
+  alert("🧠 AI Beat Suggestion Coming Soon!\nWe'll add kick-snare-hat logic!");
+});
