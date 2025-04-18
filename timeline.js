@@ -3,7 +3,41 @@ export function setupTimeline(trackCount = 4, beatsPerTrack = 16) {
   const grid = document.getElementById('timeline-grid');
   console.log('Timeline ready');
 
-  // Render the timeline grid
+  // Handle dragging to scroll
+  let isDragging = false;
+  let startX, scrollLeft;
+
+  timeline.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startX = e.pageX - timeline.offsetLeft;
+    scrollLeft = timeline.scrollLeft;
+  });
+
+  timeline.addEventListener('mouseleave', () => {
+    isDragging = false;
+  });
+
+  timeline.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+
+  timeline.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const x = e.pageX - timeline.offsetLeft;
+    const scroll = (x - startX) + scrollLeft;
+    timeline.scrollLeft = scroll;
+  });
+
+  // Handle zooming with mouse wheel
+  timeline.addEventListener('wheel', (e) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      const scaleFactor = e.deltaY > 0 ? 1.1 : 0.9;
+      timeline.style.transform = `scaleX(${scaleFactor})`;
+    }
+  });
+
+  // Render the timeline grid with beats and tracks
   if (grid) {
     grid.innerHTML = "";
     for (let t = 0; t < trackCount; t++) {
@@ -17,11 +51,11 @@ export function setupTimeline(trackCount = 4, beatsPerTrack = 16) {
     }
 
     // Enable beat selection via dragging
-    let isDragging = false;
+    let isSelecting = false;
     let selectionBox = null;
 
     grid.addEventListener("mousedown", (e) => {
-      isDragging = true;
+      isSelecting = true;
       selectionBox = document.createElement("div");
       selectionBox.className = "selection-box";
       selectionBox.style.left = `${e.offsetX}px`;
@@ -32,7 +66,7 @@ export function setupTimeline(trackCount = 4, beatsPerTrack = 16) {
     });
 
     grid.addEventListener("mousemove", (e) => {
-      if (!isDragging || !selectionBox) return;
+      if (!isSelecting || !selectionBox) return;
       const startX = parseFloat(selectionBox.dataset.startX);
       const startY = parseFloat(selectionBox.dataset.startY);
       selectionBox.style.width = `${Math.abs(e.offsetX - startX)}px`;
@@ -43,7 +77,7 @@ export function setupTimeline(trackCount = 4, beatsPerTrack = 16) {
 
     window.addEventListener("mouseup", () => {
       if (selectionBox) selectionBox.remove();
-      isDragging = false;
+      isSelecting = false;
     });
   }
 }
