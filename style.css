@@ -390,3 +390,10 @@ button:hover {
 .register-link a:hover {
     text-decoration: underline;
 }
+/* Optional: Add subtle animations for inputs */
+.login-box input {
+    transition: all 0.25s ease;
+}
+.login-box input:focus {
+    box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+}
