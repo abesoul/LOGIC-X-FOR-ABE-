@@ -203,6 +203,10 @@ body {
   z-index: 1000;
 }
 
+.snap-to-grid {
+  transition: transform 0.2s ease-in-out;
+}
+
 .beat-shifted {
   animation: shiftAnimation 0.3s ease-in-out;
 }
