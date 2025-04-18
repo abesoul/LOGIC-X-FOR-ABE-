@@ -1,24 +1,83 @@
-let zoomLevel = 1; // Zoom level for timeline (1 = normal, > 1 = zoomed in)
-let subdivisionLevel = 4; // Default subdivision (e.g., 4 subdivisions per beat)
-let tempo = 120; // Default tempo (beats per minute)
+let zoomLevel = 1; 
+let subdivisionLevel = 4;
+let tempo = 120;
 let trackPatterns = [];
 let currentPattern = [];
-let previousPatterns = []; // For Undo functionality
-let nextPatterns = []; // For Redo functionality
+let previousPatterns = [];
+let nextPatterns = [];
 let trackCounter = 0;
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let tracks = [];
-let copiedBeat = null; // Store copied beat for paste functionality
-let selectedBeats = []; // Store selected beats for shifting
+let copiedBeat = null;
+let selectedBeats = [];
 
-// Add track
+const timelineGrid = document.getElementById('timeline-grid');
+let selectionBox = null;
+let startX, startY;
+let isSelecting = false;
+
+// -------- TIMELINE SELECTION BOX --------
+timelineGrid.addEventListener('mousedown', (e) => {
+  isSelecting = true;
+  startX = e.offsetX;
+  startY = e.offsetY;
+
+  selectionBox = document.createElement('div');
+  selectionBox.className = 'selection-box';
+  selectionBox.style.left = `${startX}px`;
+  selectionBox.style.top = `${startY}px`;
+  timelineGrid.appendChild(selectionBox);
+});
+
+timelineGrid.addEventListener('mousemove', (e) => {
+  if (!isSelecting) return;
+
+  const currX = e.offsetX;
+  const currY = e.offsetY;
+
+  const rect = {
+    left: Math.min(startX, currX),
+    top: Math.min(startY, currY),
+    width: Math.abs(startX - currX),
+    height: Math.abs(startY - currY)
+  };
+
+  Object.assign(selectionBox.style, {
+    left: `${rect.left}px`,
+    top: `${rect.top}px`,
+    width: `${rect.width}px`,
+    height: `${rect.height}px`
+  });
+
+  document.querySelectorAll('.beat').forEach(beat => {
+    const beatRect = beat.getBoundingClientRect();
+    const gridRect = timelineGrid.getBoundingClientRect();
+
+    const beatX = beatRect.left - gridRect.left;
+    const beatWidth = beatRect.width;
+
+    const isInside = beatX + beatWidth > rect.left &&
+                     beatX < rect.left + rect.width;
+
+    beat.classList.toggle('selected', isInside);
+  });
+});
+
+document.addEventListener('mouseup', () => {
+  if (selectionBox) {
+    timelineGrid.removeChild(selectionBox);
+    selectionBox = null;
+  }
+  isSelecting = false;
+});
+
+// -------- TRACK CREATION --------
 document.getElementById("add-track-btn").addEventListener("click", () => {
   const index = trackCounter++;
   const track = createTrack(index);
   tracks.push(track);
   updateUI();
 
-  // Create track strip
   const trackStrip = document.createElement("div");
   trackStrip.className = "track-strip";
   trackStrip.innerHTML = `
@@ -33,9 +92,9 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
   `;
   document.getElementById("track-list").appendChild(trackStrip);
 
-  // Create track timeline row
   const timelineRow = document.createElement("div");
   timelineRow.className = "timeline-row";
+  timelineRow.id = `timeline-row-${index}`;
   timelineRow.innerHTML = `
     <p>Track ${index + 1}</p>
     <button class="load-file-btn" data-index="${index}">🎵 Load File</button>
@@ -46,6 +105,7 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
     <button class="suggest-beat-btn" data-index="${index}">🔮 Suggest Beat</button>
     <button class="undo-btn" data-index="${index}">↩️ Undo</button>
     <button class="redo-btn" data-index="${index}">↪️ Redo</button>
+    <div class="beat-pattern"></div>
     <div class="fx-controls">
       <label for="reverb-slider-${index}">Reverb</label>
       <input id="reverb-slider-${index}" type="range" min="0" max="1" step="0.01" value="0.2" />
@@ -57,22 +117,25 @@ document.getElementById("add-track-btn").addEventListener("click", () => {
   `;
   document.getElementById("timeline-tracks").appendChild(timelineRow);
 
-  // Initialize track functionality
+  // Create 64 beat blocks in this track
+  const beatPattern = timelineRow.querySelector('.beat-pattern');
+  for (let i = 0; i < 64; i++) {
+    const beat = document.createElement('div');
+    beat.classList.add('beat');
+    beat.dataset.time = i / 64;
+    beat.style.left = `${(i / 64) * 100}%`;
+    beatPattern.appendChild(beat);
+  }
+
   initTrackLogic(index);
-
-  // Initialize zoom controls
   initZoomControls(index);
-
-  // Initialize advanced beat editing
   enableAdvancedBeatEditing(index);
-
-  // Display subdivisions
   displaySubdivisions(index);
 });
 
-// Track creation function
+// -------- AUDIO TRACK SETUP --------
 function createTrack(index) {
-  const track = {
+  return {
     audioElement: new Audio(),
     gainNode: audioContext.createGain(),
     panNode: audioContext.createStereoPanner(),
@@ -84,76 +147,48 @@ function createTrack(index) {
     muted: false,
     soloed: false
   };
-
-  track.audioElement.crossOrigin = "anonymous";
-  return track;
 }
 
-// Finalize beat visuals based on type (split, inserted, deleted)
-function finalizeBeatVisuals(beatElement, type) {
+// -------- BEAT VISUAL FEEDBACK --------
+function finalizeBeatVisuals(beat, type) {
   if (type === "split") {
-    beatElement.style.backgroundColor = "lightblue"; // Light color for split beats
-    beatElement.style.border = "1px dashed #00f"; // Dashed border
+    beat.style.backgroundColor = "lightblue";
+    beat.style.border = "1px dashed #00f";
   } else if (type === "inserted") {
-    beatElement.style.backgroundColor = "yellow"; // Highlight inserted beats
-    beatElement.style.boxShadow = "0 0 5px rgba(255, 255, 0, 0.7)"; // Glowing effect
+    beat.style.backgroundColor = "yellow";
+    beat.style.boxShadow = "0 0 5px rgba(255, 255, 0, 0.7)";
   } else if (type === "deleted") {
-    beatElement.style.backgroundColor = "red"; // Red for deleted beats
-    beatElement.style.opacity = 0.5; // Faded look
-    setTimeout(() => beatElement.style.display = 'none', 500); // Smooth removal
+    beat.style.backgroundColor = "red";
+    beat.style.opacity = 0.5;
+    setTimeout(() => beat.remove(), 500);
   }
 }
 
-// Split a beat
-function splitBeat(time, index) {
-  const timelineRow = document.querySelector(`#timeline-row-${index}`);
-  const patternRow = timelineRow.querySelector(".beat-pattern");
-
-  const newBeat = document.createElement("div");
-  newBeat.classList.add("beat");
-  newBeat.style.left = `${time * 100}%`;
-  newBeat.style.height = "100%";
-  newBeat.dataset.time = time;
-
-  patternRow.appendChild(newBeat);
-  finalizeBeatVisuals(newBeat, "split");
-
-  initDragAndDrop(index);
-}
-
-// Insert a new beat
+// -------- INSERT, DELETE, SPLIT --------
 function insertBeat(time, index) {
-  const timelineRow = document.querySelector(`#timeline-row-${index}`);
-  const patternRow = timelineRow.querySelector(".beat-pattern");
-
-  const newBeat = document.createElement("div");
-  newBeat.classList.add("beat");
-  newBeat.style.left = `${time * 100}%`;
-  newBeat.style.height = "100%";
-  newBeat.dataset.time = time;
-
-  patternRow.appendChild(newBeat);
-  finalizeBeatVisuals(newBeat, "inserted");
-
+  const patternRow = document.querySelector(`#timeline-row-${index} .beat-pattern`);
+  const beat = document.createElement("div");
+  beat.classList.add("beat");
+  beat.dataset.time = time;
+  beat.style.left = `${time * 100}%`;
+  beat.style.height = "100%";
+  patternRow.appendChild(beat);
+  finalizeBeatVisuals(beat, "inserted");
   initDragAndDrop(index);
 }
 
-// Delete a beat
-function deleteBeat(beatElement, index) {
-  finalizeBeatVisuals(beatElement, "deleted");
-  const timelineRow = document.querySelector(`#timeline-row-${index}`);
-  const patternRow = timelineRow.querySelector(".beat-pattern");
-
-  setTimeout(() => {
-    patternRow.removeChild(beatElement);
-  }, 500);
+function splitBeat(time, index) {
+  insertBeat(time, index);
+  finalizeBeatVisuals(document.querySelector(`#timeline-row-${index} .beat-pattern .beat:last-child`), "split");
 }
 
-// Enable copying and pasting of beats
-function enableCopyPaste(index) {
-  const timelineRow = document.querySelector(`#timeline-row-${index}`);
-  const patternRow = timelineRow.querySelector(".beat-pattern");
+function deleteBeat(beat, index) {
+  finalizeBeatVisuals(beat, "deleted");
+}
 
+// -------- COPY/PASTE --------
+function enableCopyPaste(index) {
+  const patternRow = document.querySelector(`#timeline-row-${index} .beat-pattern`);
   patternRow.addEventListener("contextmenu", (e) => {
     if (e.target.classList.contains("beat")) {
       copiedBeat = e.target;
@@ -169,69 +204,65 @@ function enableCopyPaste(index) {
 }
 
 function pasteBeat(targetBeat, index) {
-  const targetTime = parseFloat(targetBeat.dataset.time);
-  const newBeat = document.createElement("div");
-  newBeat.classList.add("beat");
-  newBeat.style.left = `${targetTime * 100}%`;
-  newBeat.style.height = "100%";
-  newBeat.dataset.time = targetTime;
-  
-  const timelineRow = document.querySelector(`#timeline-row-${index}`);
-  const patternRow = timelineRow.querySelector(".beat-pattern");
-  patternRow.appendChild(newBeat);
-
-  finalizeBeatVisuals(newBeat, "inserted");
-
-  initDragAndDrop(index);
+  const time = parseFloat(targetBeat.dataset.time);
+  insertBeat(time, index);
 }
 
-// Shifting beats in a pattern
-function enablePatternShifting(index) {
-  const timelineRow = document.querySelector(`#timeline-row-${index}`);
-  const patternRow = timelineRow.querySelector(".beat-pattern");
+// -------- SHIFT SECTION --------
+function shiftBeatSection(startIndex, endIndex, direction, index) {
+  const patternRow = document.querySelector(`#timeline-row-${index} .beat-pattern`);
+  Array.from(patternRow.children).forEach(beat => {
+    const time = parseFloat(beat.dataset.time);
+    if (time >= startIndex && time <= endIndex) {
+      const newTime = time + direction;
+      beat.dataset.time = newTime;
+      beat.style.left = `${newTime * 100}%`;
+    }
+  });
+}
 
-  patternRow.addEventListener("mousedown", (e) => {
+function enableAdvancedBeatEditing(index) {
+  enableCopyPaste(index);
+  enablePatternShifting(index);
+}
+
+function enablePatternShifting(index) {
+  const patternRow = document.querySelector(`#timeline-row-${index} .beat-pattern`);
+  patternRow.addEventListener("mousedown", e => {
     if (e.target.classList.contains("beat")) {
       selectedBeats = [e.target];
     }
   });
-
-  patternRow.addEventListener("mousemove", (e) => {
+  patternRow.addEventListener("mousemove", e => {
     if (selectedBeats.length) {
-      const newBeatPosition = e.clientX / patternRow.clientWidth;
+      const percent = e.offsetX / patternRow.clientWidth;
       selectedBeats.forEach(beat => {
-        beat.style.left = `${newBeatPosition * 100}%`;
+        beat.style.left = `${percent * 100}%`;
+        beat.dataset.time = percent;
       });
     }
   });
-
   patternRow.addEventListener("mouseup", () => {
     selectedBeats = [];
   });
 }
 
-// Shift a section of beats
-function shiftBeatSection(startIndex, endIndex, direction, index) {
-  const timelineRow = document.querySelector(`#timeline-row-${index}`);
-  const patternRow = timelineRow.querySelector(".beat-pattern");
+function initZoomControls(index) {
+  // TODO: implement zoom logic
+}
 
-  const beatsInRange = Array.from(patternRow.children).filter(beat => {
-    const time = parseFloat(beat.dataset.time);
-    return time >= startIndex && time <= endIndex;
-  });
+function updateUI() {
+  // Optional: Update mixer, track count, etc.
+}
 
-  beatsInRange.forEach(beat => {
-    const newTime = parseFloat(beat.dataset.time) + direction;
-    beat.dataset.time = newTime;
-    beat.style.left = `${newTime * 100}%`;
-  });
+function displaySubdivisions(index) {
+  // Optional: Add visual grid lines based on subdivision
+}
+
+function initTrackLogic(index) {
+  // TODO: Add logic for playback, effects, etc.
 }
 
 function initDragAndDrop(index) {
-  // Logic to enable dragging and dropping of beat blocks
-}
-
-// Zoom functionality
-function initZoomControls(index) {
-  // Handle zoom-in and zoom-out functionality for track view
+  // TODO: Allow drag/drop of beats
 }
